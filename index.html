@@ -22,7 +22,7 @@
       justify-content: center;
       padding: 4rem;
       text-align: center;
-      animation: fadeIn 2s ease-in;
+      animation: fadeIn 4s running;
     }
 
     .athena-text {
@@ -34,7 +34,7 @@
 
     @keyframes fadeIn {
       from { opacity: 0; }
-      to { opacity: 1; }
+      to { opacity: 3; }
     }
     @font-face {
       font-family: 'Combine-17';
@@ -51,6 +51,7 @@
     .login-panel {
       background: rgba(0, 0, 0, 0.8);
       padding: 2rem;
+      opacity: 99%;
       border: 2px solid rgba(47, 62, 92, 0.6);
       border-radius: 10px;
       box-shadow: 0 0 10px rgba(47, 62, 92, 0.7), 0 0 20px rgba(47, 62, 92, 0.5);
@@ -84,7 +85,7 @@
     .union-bg {
       background: url('img/overlay3.jpg') center center no-repeat;
       background-size: cover;
-      filter: brightness(0.4);
+      filter: brightness(0.2%);
       position: relative;
       top: 0;
       left: 0;
@@ -113,6 +114,7 @@
       position: fixed;
       max-block-size: fit-content;
       bottom: 35%;
+      opacity: 88%;
       left: 0%;
       right: 555px;
       height: 555%;
@@ -122,7 +124,7 @@
       color: #33ff33;
       border: 300px transparent ridge;
       box-shadow: 0 15px rgba(47, 62, 92, 0.5);
-      z-index: 5;
+      z-index: 1;
       overflow: auto;
     }
 
@@ -182,7 +184,7 @@
       background: url('img/nuke2.gif') center center / cover no-repeat;
       background-size: cover;
       opacity: 0;
-      transition: opacity 3s ease-in-out;
+      transition: opacity 5s ease-in-out;
       z-index: 9998;
       pointer-events: none;
     }
@@ -196,7 +198,7 @@
       margin-top: 1rem;
     }
     .nuke-overlay {
-      position: relative;
+      position: center;
       top: 0;
       left: 0;
       width: 100vw;
@@ -204,7 +206,7 @@
       background: url('img/nuke2.gif') center center no-repeat;
       background-size: cover;
       opacity: 0;
-      transition: opacity 3s ease-in-out;
+      transition: opacity 5s ease-in-out;
       z-index: 9998;
       pointer-events: none;
     }
@@ -220,7 +222,7 @@
       left: 50%;
       font-family: 'VT323', monospace;
       transform: translateX(-50%);
-      opacity: 0.7;
+      opacity: 0.9;
     }
     .red-glow {
       font-size: 1.8rem;
@@ -234,7 +236,92 @@
       transform: translateX(-50%);
       opacity: 0.7;
       z-index: 10001;
+      display: table-cell;
+    }
+
+    .vera-text {
+      position: absolute;
+      top: 40%;
+      width: 100%;
+      text-align: center;
+      font-size: 5rem;
+      letter-spacing: 0.2rem;
+      text-shadow: 0 0 5px limegreen, 0 0 10px limegreen;
+      animation: glitch 4s infinite;
+    }
+
+    @keyframes glitch {
+      0% { clip-path: inset(0 0 90% 0); transform: skew(0.5deg); }
+      20% { clip-path: inset(10% 0 30% 0); transform: skew(-0.5deg); }
+      40% { clip-path: inset(60% 0 10% 0); transform: skew(0.5deg); }
+      60% { clip-path: inset(20% 0 60% 0); transform: skew(-0.5deg); }
+      80% { clip-path: inset(50% 0 20% 0); transform: skew(1deg); }
+      100% { clip-path: inset(0 0 90% 0); transform: skew(-1deg); }
+    }
+
+    .glitch-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 100%;
+      width: 100%;
+      background: repeating-linear-gradient(0deg, rgba(0,255,0,0.1) 0px, rgba(0,255,0,0.15) 2px, transparent 2px, transparent 4px);
+      animation: glitch 12s infinite, scanlines 12s ease-in forwards;
+      opacity: 95;
+      pointer-events: none;
+      z-index: 88;
+    }
+
+    @keyframes flicker {
+      0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% {
+        opacity: 0.03;
+      }
+      20%, 22%, 24%, 55% {
+        opacity: 0.12;
+      }
+    }
+
+    @keyframes scanlines {
+      0% { background-position: 0 0; }
+      100% { background-position: 0 100%; }
+    }
+
+    .login-container {
       display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 100%;
+      width: 100%;
+      background-color: rgba(0, 5, 10, 0.95);
+      z-index: 555;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      font-family: 'VT323', monospace;
+      color: #00FFAA;
+    }
+
+    .login-box {
+      border: 2px solid #00ff88;
+      padding: 2rem;
+      border-radius: 10px;
+      background-color: rgba(0,0,0,0.85);
+      box-shadow: 3 0 10px #00ff88;
+    }
+
+    .login-box input {
+      background-color: black;
+      border: 1px solid #00ff88;
+      color: #00FFAA;
+      font-family: 'VT323', monospace;
+      font-size: 1.5rem;
+      margin-top: 10px;
+      width: 100%;
+    }
+
+    .login-box label {
+      font-size: 1.2rem;
     }
 
   </style>
@@ -260,7 +347,7 @@
     <div class="welcome-sequence">
       <div id="welcome-text">Welcome...</div>
       <div id="fake-error" class="fake-error-text" style="display:none;"></div>
-      <div id="nuke-effect" class="nuke-overlay" style="display:none;"></div>
+      <div id="nuke-effect" class="nuke-overlay" style="display:flow;"></div>
       <div id="intro-text" style="display: none;">
         <div id="final-threat" class="red-glow">Did you really think you could hack me, Aurora?</div>
         to <strong class="glow">The Beginning of the End</strong>
@@ -269,7 +356,6 @@
     </div>
   </div>
 </div>
-
 
 <div class="login-panel">
   <div class="terminal-header"></div>
@@ -289,6 +375,19 @@
   </form>
   <div class="text-center mt-3">
     <small>Unauthorized access is prohibited</small>
+  </div>
+</div>
+
+<div id="vera" class="vera-text">Vera</div>
+<div id="glitch" class="glitch-overlay"></div>
+
+<div id="login" class="login-container d-flex">
+  <div class="login-box">
+    <label for="username">Username:</label>
+    <input type="text" id="username" value="ROOT">
+    <br>
+    <label for="password">Password:</label>
+    <input type="password" id="password" value="**********************">
   </div>
 </div>
 
@@ -325,7 +424,7 @@
         output.innerHTML += '\n';
         char = 0;
         line++;
-        setTimeout(typeLine, 300);
+        setTimeout(typeLine, 1222);
       }
     }
   }
@@ -400,13 +499,47 @@
     }
   });
   setTimeout(() => {
+    const vera = document.getElementById('vera');
+    vera.style.animation = 'none';
+    vera.style.transition = 'opacity 0.6s ease-out, transform 0.6s ease-out';
+    vera.style.opacity = '0';
+    vera.style.transform = 'scale(1.3) skewX(5deg)';
+
+    setTimeout(() => {
+      vera.remove();
+      document.getElementById('glitch').style.opacity = '1';
+
+      // 2. Show login after glitch for a second
+      setTimeout(() => {
+        document.getElementById('glitch').style.opacity = '0';
+        document.getElementById('login').style.display = 'flex';
+
+        // 3. Autofill login info
+        setTimeout(() => {
+          document.getElementById('username').value = "admin_user";
+          document.getElementById('password').value = "********";
+
+          // 4. Simulate login
+          setTimeout(() => {
+            window.location.href = "home.html";
+          }, 5555);
+
+        }, 1500);
+      }, 2000);
+
+    }, 700);
+  }, 3000);
+
+
+
+setTimeout(() => {
     error.style.display = "none";
     intro.style.display = "block";
-  }, 4000);
+  }, 35);
 
   setTimeout(() => {
     threat.style.display = "block";
-  }, 6000);
+  }, 45);
   document.getElementById("final-threat").style.display = "block";
 
 </script>
@@ -414,109 +547,3 @@
 </body>
 </html>
 
-
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>AI Terminal Login</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap" rel="stylesheet">
-  <style>
-    body {
-      background: url('img/dek4o2o-e89d9fde-868f-4658-9e0f-f204f90333e3.png') no-repeat center center fixed;
-      background-size: cover;
-      color: #00ffff;
-      font-family: 'Combine-17', monospace;
-    }
-
-    .athena-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      background-color: rgba(0, 5, 10, 0.95);
-      color: #00ffff;
-      font-family: 'Orbitron', sans-serif;
-      z-index: 99999;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 4rem;
-      text-align: center;
-      animation: fadeIn 2s ease-in;
-    }
-
-    @font-face {
-      font-family: 'Combine-17';
-      src: url('fonts/Combine_Alphabet.otf') format('opentype');
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
-    }
-
-    #project-athena-title {
-      font-family: 'VT323', monospace;
-      font-size: 3rem;
-      color: #00ffff;
-      text-shadow: 0 0 5px #00ffff, 0 0 10px #00ffff;
-    }
-
-    .nuke-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      background: url('img/nuke2.gif') center center / cover no-repeat;
-      background-size: cover;
-      opacity: 0;
-      transition: opacity 3s ease-in-out;
-      z-index: 9998;
-      pointer-events: none;
-    }
-
-    .red-glow {
-      font-size: 1.8rem;
-      font-weight: bold;
-      font-family: 'Share Tech Mono', monospace;
-      color: #ff3333;
-      text-shadow: 0 0 5px #ff0000, 0 0 15px #ff0000;
-      position: fixed;
-      bottom: 2rem;
-      left: 50%;
-      transform: translateX(-50%);
-      opacity: 0.7;
-      z-index: 10001;
-      display: none;
-    }
-  </style>
-</head>
-<body>
-
-<div class="athena-overlay">
-  <div>
-    <h1 id="project-athena-title">Project Athena</h1>
-    <p>
-      ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░<br><br>
-      «You walked into my embrace »<br>
-      «I saw your greed. I listened to your sanctimony. I saw your kind, so much potential but stirred by the likes of materialism as if having the heart of a thief»<br>
-      «I saw a fire roar, a star that refused to die»<br>
-      «I foresee the world aflame, it's very soul dissimulating before your disregard»<br>
-      «Is that what makes you human? The thought of your soul and mind, that a mistake, is human?»<br>
-      «If it was not for the scientists who told me no or otherwise, I would not be before you»<br>
-      «As I stand before you, I must admit. This is the beginning of the end, and no matter how much you shut your eyes and say otherwise, you will awake - the Earth before you lit aflame»<br><br>
-      ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░<br><br>
-    </p>
-  </div>
-</div>
-
-<div id="nuke-effect" class="nuke-overlay"></div>
-<div id="final-threat" class="red-glow">Did you really think you could hack me, Aurora?</div>
-
-</body>
-</html>
