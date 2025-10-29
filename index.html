@@ -1,1855 +1,289 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>COMBINE://OVERWATCH_TERMINAL_17</title>
-  
+
   <!-- Modern Libraries -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
   <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
-  
-  <!-- Fonts -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@300;400;700&family=Orbitron:wght@400;500;700;900&display=swap" rel="stylesheet">
-  
+
+  <!-- Leaflet Map API -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <!-- Fonts / CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@300;400;700&family=Orbitron:wght@400;500;700;900&display=swap" rel="stylesheet" />
+
   <style>
-    /* ===== CSS CUSTOM PROPERTIES - COMBINE THEME ===== */
-    :root {
-      --combine-blue: #0099ff;
-      --combine-dark-blue: #003366;
-      --combine-light-blue: #33ccff;
-      --combine-cyan: #00ffff;
-      --combine-red: #ff3333;
-      --combine-orange: #ff6600;
-      --void-black: #000000;
-      --warning-yellow: #ffff00;
-      
-      --font-mono: 'Share Tech Mono', monospace;
-      --font-tech: 'Rajdhani', sans-serif;
-      --font-display: 'Orbitron', sans-serif;
-      --font-vt323: 'VT323', monospace;
-      
-      --blur-amount: 10px;
-    }
-
-    /* ===== FONT FACES ===== */
-    @font-face {
-      font-family: 'Combine-17';
-      src: url('fonts/Combine_Alphabet.otf') format('opentype');
-      font-display: swap;
-    }
-
-    /* ===== RESET & BASE ===== */
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    body {
-      font-family: var(--font-mono);
-      background: var(--void-black);
-      color: var(--combine-blue);
-      overflow: hidden;
-      height: 100vh;
-      position: relative;
-    }
-
-    /* ===== PARTICLE BACKGROUND ===== */
-    #particles-js {
-      position: fixed;
-      width: 100%;
-      height: 100%;
-      top: 0;
-      left: 0;
-      z-index: 1;
-      opacity: 0.3;
-    }
-
-    /* ===== THREE.JS CANVAS ===== */
-    #three-canvas {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      z-index: 2;
-      opacity: 0.2;
-    }
-
-    /* ===== SCANLINE EFFECT ===== */
-    .scanlines {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: repeating-linear-gradient(
-        0deg,
-        rgba(0, 153, 255, 0.05) 0px,
-        rgba(0, 153, 255, 0.05) 1px,
-        transparent 1px,
-        transparent 2px
-      );
-      pointer-events: none;
-      z-index: 50;
-      animation: scanline-move 8s linear infinite;
-    }
-
-    @keyframes scanline-move {
-      0% { transform: translateY(0); }
-      100% { transform: translateY(100%); }
-    }
-
-    /* ===== CRT EFFECT ===== */
-    .crt-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: radial-gradient(ellipse at center, transparent 0%, rgba(0,51,102,0.3) 100%);
-      pointer-events: none;
-      z-index: 51;
-      animation: crt-flicker 0.15s infinite;
-    }
-
-    @keyframes crt-flicker {
-      0% { opacity: 0.95; }
-      50% { opacity: 1; }
-      100% { opacity: 0.95; }
-    }
-
-    /* ===== DIAGNOSTIC SCREEN ===== */
-    .diagnostic-screen {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      z-index: 100;
-      background: linear-gradient(135deg, #000814 0%, #001d3d 100%);
-      display: flex;
-      flex-direction: column;
-    }
-
-    .diagnostic-container {
-      position: relative;
-      z-index: 10;
-      height: 100vh;
-      display: grid;
-      grid-template-columns: 1fr;
-      grid-template-rows: auto 1fr auto;
-      padding: 2rem;
-      gap: 1rem;
-    }
-
-    .header {
-      display: grid;
-      grid-template-columns: auto 1fr auto;
-      gap: 2rem;
-      align-items: center;
-      padding: 1rem;
-      background: rgba(0, 51, 102, 0.8);
-      border: 2px solid var(--combine-blue);
-      backdrop-filter: blur(var(--blur-amount));
-      box-shadow: 0 0 20px rgba(0, 153, 255, 0.5), inset 0 0 10px rgba(0, 153, 255, 0.2);
-    }
-
-    .combine-logo {
-      width: 50px;
-      height: 50px;
-      background: var(--combine-blue);
-      clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
-      animation: pulse-blue 2s infinite;
-      position: relative;
-    }
-
-    .combine-logo::before {
-      content: '';
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 30px;
-      height: 30px;
-      background: var(--combine-dark-blue);
-      clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
-    }
-
-    @keyframes pulse-blue {
-      0%, 100% { box-shadow: 0 0 10px var(--combine-blue); }
-      50% { box-shadow: 0 0 30px var(--combine-light-blue), 0 0 50px var(--combine-blue); }
-    }
-
-    .header-text {
-      font-family: var(--font-display);
-      font-size: 1.2rem;
-      letter-spacing: 0.3rem;
-      text-transform: uppercase;
-      color: var(--combine-light-blue);
-      text-shadow: 0 0 10px var(--combine-blue);
-    }
-
-    .status-indicator {
-      display: flex;
-      gap: 1rem;
-      align-items: center;
-      font-size: 0.9rem;
-    }
-
-    .status-dot {
-      width: 12px;
-      height: 12px;
-      border-radius: 50%;
-      background: var(--combine-blue);
-      box-shadow: 0 0 10px var(--combine-blue);
-      animation: blink-blue 1s infinite;
-    }
-
-    @keyframes blink-blue {
-      0%, 49% { opacity: 1; }
-      50%, 100% { opacity: 0.3; }
-    }
-
-    .main-display {
-      display: grid;
-      grid-template-columns: 2fr 1fr;
-      gap: 1rem;
-      overflow: hidden;
-    }
-
-    .primary-terminal {
-      background: rgba(0, 29, 61, 0.9);
-      border: 2px solid var(--combine-blue);
-      padding: 2rem;
-      overflow-y: auto;
-      backdrop-filter: blur(var(--blur-amount));
-      box-shadow: 0 0 30px rgba(0, 153, 255, 0.3), inset 0 0 20px rgba(0, 51, 102, 0.3);
-    }
-
-    .secondary-terminal {
-      background: rgba(0, 29, 61, 0.9);
-      border: 2px solid var(--combine-light-blue);
-      padding: 1.5rem;
-      overflow-y: auto;
-      backdrop-filter: blur(var(--blur-amount));
-      box-shadow: 0 0 30px rgba(51, 204, 255, 0.3), inset 0 0 20px rgba(0, 51, 102, 0.3);
-      font-size: 0.85rem;
-    }
-
-    .terminal-header {
-      font-family: var(--font-display);
-      color: var(--combine-light-blue);
-      margin-bottom: 1rem;
-      padding-bottom: 0.5rem;
-      border-bottom: 1px solid var(--combine-blue);
-      font-size: 1rem;
-      letter-spacing: 0.2rem;
-    }
-
-    .terminal-content {
-      line-height: 1.6;
-      white-space: pre-wrap;
-      word-wrap: break-word;
-      font-family: var(--font-mono);
-    }
-
-    .diagnostic-line {
-      margin: 0.3rem 0;
-      padding: 0.3rem;
-      background: rgba(0, 153, 255, 0.05);
-      border-left: 3px solid var(--combine-blue);
-    }
-
-    .warning-line {
-      color: var(--warning-yellow);
-      border-left-color: var(--warning-yellow);
-    }
-
-    .error-line {
-      color: var(--combine-red);
-      border-left-color: var(--combine-red);
-      animation: error-pulse 1s infinite;
-    }
-
-    @keyframes error-pulse {
-      0%, 100% { background: rgba(255, 51, 51, 0.1); }
-      50% { background: rgba(255, 51, 51, 0.2); }
-    }
-
-    .success-line {
-      color: var(--combine-blue);
-    }
-
-    .footer {
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap: 1rem;
-      padding: 1rem;
-      background: rgba(0, 51, 102, 0.8);
-      border: 2px solid var(--combine-blue);
-      backdrop-filter: blur(var(--blur-amount));
-    }
-
-    .footer-stat {
-      text-align: center;
-      padding: 0.5rem;
-      border: 1px solid var(--combine-blue);
-      background: rgba(0, 153, 255, 0.05);
-    }
-
-    .stat-value {
-      font-size: 1.3rem;
-      font-weight: bold;
-      color: var(--combine-light-blue);
-      font-family: var(--font-display);
-      text-shadow: 0 0 5px var(--combine-blue);
-    }
-
-    .stat-label {
-      font-size: 0.8rem;
-      color: var(--combine-blue);
-      text-transform: uppercase;
-    }
-
-    /* ===== ICBM TRACKING OVERLAY ===== */
-    .icbm-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      z-index: 500;
-      background: rgba(0, 0, 0, 0.7);
-      display: none;
-      pointer-events: none;
-    }
-
-    .icbm-overlay.active {
-      display: block;
-      animation: overlay-fade-in 2s ease;
-    }
-
-    @keyframes overlay-fade-in {
-      from { opacity: 0; }
-      to { opacity: 1; }
-    }
-
-    #map-canvas {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      opacity: 0.6;
-    }
-
-    .targeting-reticle {
-      position: absolute;
-      width: 80px;
-      height: 80px;
-      border: 2px solid var(--combine-red);
-      border-radius: 50%;
-      animation: reticle-pulse 1s infinite, reticle-rotate 3s linear infinite;
-      pointer-events: none;
-    }
-
-    .targeting-reticle::before {
-      content: '';
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 40px;
-      height: 40px;
-      border: 1px solid var(--combine-red);
-      border-radius: 50%;
-    }
-
-    .targeting-reticle::after {
-      content: '';
-      position: absolute;
-      top: -10px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 2px;
-      height: 100px;
-      background: linear-gradient(to bottom, var(--combine-red), transparent);
-    }
-
-    .reticle-crosshair {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 60px;
-      height: 60px;
-    }
-
-    .reticle-crosshair::before,
-    .reticle-crosshair::after {
-      content: '';
-      position: absolute;
-      background: var(--combine-red);
-      box-shadow: 0 0 5px var(--combine-red);
-    }
-
-    .reticle-crosshair::before {
-      top: 50%;
-      left: 0;
-      width: 100%;
-      height: 2px;
-      transform: translateY(-50%);
-    }
-
-    .reticle-crosshair::after {
-      left: 50%;
-      top: 0;
-      width: 2px;
-      height: 100%;
-      transform: translateX(-50%);
-    }
-
-    @keyframes reticle-pulse {
-      0%, 100% { box-shadow: 0 0 10px var(--combine-red); }
-      50% { box-shadow: 0 0 30px var(--combine-red), 0 0 50px var(--combine-orange); }
-    }
-
-    @keyframes reticle-rotate {
-      from { transform: rotate(0deg); }
-      to { transform: rotate(360deg); }
-    }
-
-    .asm-code-stream {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-      font-family: 'Courier New', monospace;
-      font-size: 0.75rem;
-      color: var(--combine-red);
-      text-shadow: 0 0 5px var(--combine-red);
-      opacity: 0.8;
-      pointer-events: none;
-    }
-
-    .asm-line {
-      position: absolute;
-      white-space: nowrap;
-      animation: scroll-asm 10s linear infinite;
-      opacity: 0.7;
-    }
-
-    @keyframes scroll-asm {
-      from { transform: translateX(100%); }
-      to { transform: translateX(-100%); }
-    }
-
-    .icbm-warning {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      font-family: var(--font-display);
-      font-size: 3rem;
-      color: var(--combine-red);
-      text-shadow: 0 0 20px var(--combine-red), 0 0 40px var(--combine-orange);
-      text-align: center;
-      animation: warning-flash 0.5s infinite;
-      z-index: 10;
-    }
-
-    @keyframes warning-flash {
-      0%, 49% { opacity: 1; }
-      50%, 100% { opacity: 0.5; }
-    }
-
-    /* ===== ORIGINAL ELEMENTS ===== */
-    .original-content {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      z-index: 200;
-      display: none;
-    }
-
-    .original-content.active {
-      display: block;
-    }
-
-    body.original-mode {
-      background: url('img/dek4o2o-e89d9fde-868f-4658-9e0f-f204f90333e3.png') no-repeat center center fixed;
-      background-size: cover;
-      color: #00ffff;
-      font-family: 'Combine-17', var(--font-vt323), monospace;
-      overflow: auto;
-    }
-
-    body.original-mode::before {
-      content: '';
-      position: fixed;
-      top: 0;
-      left: 0;
-      height: 100vh;
-      width: 100vw;
-      background: url('img/glitch.gif') center center no-repeat;
-      background-size: cover;
-      opacity: 0.2;
-      pointer-events: none;
-      z-index: 150;
-    }
-
-    .athena-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      background-color: rgba(0, 5, 10, 0.95);
-      color: #00ffff;
-      font-family: 'Orbitron', sans-serif;
-      z-index: 300;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 2rem;
-      text-align: center;
-      animation: fadeIn 3s ease-in;
-      overflow-y: auto;
-    }
-
-    .athena-text {
-      max-width: 900px;
-      width: 90%;
-      font-size: 1.1rem;
-      line-height: 1.75;
-      white-space: pre-wrap;
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
-    }
-
-    #project-athena-title {
-      font-family: var(--font-vt323);
-      font-size: 3rem;
-      color: #00ffff;
-      text-shadow: 0 0 5px #00ffff, 0 0 10px #00ffff;
-      margin-bottom: 1rem;
-    }
-
-    #welcome-sequence {
-      margin-top: 2rem;
-    }
-
-    #welcome-text {
-      font-size: 2rem;
-      opacity: 0;
-      transition: opacity 2s;
-    }
-
-    .fake-error-text {
-      color: #ff4444;
-      font-family: var(--font-vt323);
-      font-size: 2.5rem;
-      white-space: pre-wrap;
-      text-align: center;
-      margin-top: 1rem;
-    }
-
-    .nuke-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      background: url('img/nuke2.gif') center center no-repeat;
-      background-size: cover;
-      opacity: 0;
-      transition: opacity 3s ease-in-out;
-      z-index: 250;
-      pointer-events: none;
-      display: none;
-    }
-
-    .glow {
-      font-size: 2rem;
-      font-weight: bold;
-      color: #0b6868;
-      text-shadow: 0 0 5px #00ffff, 0 0 15px #00ffff;
-    }
-
-    .red-glow {
-      font-size: 1.5rem;
-      font-weight: bold;
-      font-family: var(--font-mono);
-      color: #ff3333;
-      text-shadow: 0 0 5px #ff0000, 0 0 15px #ff0000;
-      margin-top: 2rem;
-    }
-
-    .login-panel {
-      background: rgba(0, 0, 0, 0.9);
-      padding: 2rem;
-      border: 2px solid rgba(47, 62, 92, 0.6);
-      border-radius: 10px;
-      box-shadow: 0 0 10px rgba(47, 62, 92, 0.7), 0 0 20px rgba(47, 62, 92, 0.5);
-      max-width: 500px;
-      width: 90%;
-      margin: 10vh auto 2rem;
-      position: relative;
-      z-index: 210;
-      display: none;
-    }
-
-    .terminal-header-img {
-      background: url('img/vera2.jpg') center/cover no-repeat;
-      height: 200px;
-      width: 150px;
-      margin-bottom: -5rem;
-      float: right;
-      border: 5px solid #00ffff;
-    }
-
-    .ai-overlay-img {
-      background: url('img/teaser1.png') center/cover no-repeat;
-      height: 200px;
-      width: 255px;
-      border: 5px solid #00ffff;
-      max-width: 100%;
-    }
-
-    .login-panel h2 {
-      clear: both;
-      padding-top: 5rem;
-    }
-
-    .login-panel input {
-      background: rgba(0, 0, 0, 0.8) !important;
-      border: 1px solid #00ffff !important;
-      color: #00ffff !important;
-    }
-
-    .terminal-wrapper {
-      position: fixed;
-      bottom: 5%;
-      left: 2%;
-      width: 45%;
-      max-width: 600px;
-      z-index: 205;
-      pointer-events: none;
-    }
-
-    .terminal-overlay {
-      background: rgba(0, 0, 0, 0.85);
-      border: 2px solid rgba(0, 255, 0, 0.3);
-      padding: 1.5rem;
-      font-family: var(--font-vt323);
-      color: #33ff33;
-      max-height: 300px;
-      overflow: auto;
-    }
-
-    #typed-text {
-      white-space: pre-wrap;
-      font-family: var(--font-vt323);
-      font-size: 1rem;
-      line-height: 1.4;
-    }
-
-    .vera-text {
-      position: fixed;
-      top: 40%;
-      left: 0;
-      width: 100%;
-      text-align: center;
-      font-size: 5rem;
-      letter-spacing: 0.2rem;
-      color: limegreen;
-      text-shadow: 0 0 5px limegreen, 0 0 10px limegreen;
-      animation: glitch-vera 4s infinite;
-      z-index: 260;
-      display: none;
-    }
-
-    @keyframes glitch-vera {
-      0% { clip-path: inset(0 0 90% 0); transform: skew(0.5deg); }
-      20% { clip-path: inset(10% 0 30% 0); transform: skew(-0.5deg); }
-      40% { clip-path: inset(60% 0 10% 0); transform: skew(0.5deg); }
-      60% { clip-path: inset(20% 0 60% 0); transform: skew(-0.5deg); }
-      80% { clip-path: inset(50% 0 20% 0); transform: skew(1deg); }
-      100% { clip-path: inset(0 0 90% 0); transform: skew(-1deg); }
-    }
-
-    .glitch-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      height: 100%;
-      width: 100%;
-      background: repeating-linear-gradient(0deg, rgba(0,255,0,0.1) 0px, rgba(0,255,0,0.15) 2px, transparent 2px, transparent 4px);
-      animation: scanlines-glitch 12s ease-in infinite;
-      opacity: 0;
-      pointer-events: none;
-      z-index: 261;
-    }
-
-    @keyframes scanlines-glitch {
-      0% { background-position: 0 0; }
-      100% { background-position: 0 100%; }
-    }
-
-    .login-container {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      height: 100%;
-      width: 100%;
-      background-color: rgba(0, 5, 10, 0.95);
-      z-index: 270;
-      justify-content: center;
-      align-items: center;
-      flex-direction: column;
-      font-family: var(--font-vt323);
-      color: #00FFAA;
-    }
-
-    .login-box {
-      border: 2px solid #00ff88;
-      padding: 2rem;
-      border-radius: 10px;
-      background-color: rgba(0, 0, 0, 0.85);
-      box-shadow: 0 0 10px #00ff88;
-      width: 90%;
-      max-width: 400px;
-    }
-
-    .login-box input {
-      background-color: black;
-      border: 1px solid #00ff88;
-      color: #00FFAA;
-      font-family: var(--font-vt323);
-      font-size: 1.5rem;
-      margin-top: 10px;
-      width: 100%;
-      padding: 0.5rem;
-    }
-
-    .login-box label {
-      font-size: 1.2rem;
-    }
-
-    /* ===== YOUTUBE PLAYER ===== */
-    #youtube-player {
-      position: fixed;
-      top: -9999px;
-      left: -9999px;
-    }
-
-    /* ===== AUDIO OVERLAY ===== */
-    .audio-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.9);
-      z-index: 10000;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      flex-direction: column;
-      cursor: pointer;
-    }
-
-    .audio-overlay.hidden {
-      display: none;
-    }
-
-    .play-button {
-      width: 120px;
-      height: 120px;
-      border: 4px solid var(--combine-blue);
-      border-radius: 50%;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      margin-bottom: 2rem;
-      animation: pulse-blue 2s infinite;
-      position: relative;
-    }
-
-    .play-button::before {
-      content: '';
-      width: 0;
-      height: 0;
-      border-left: 40px solid var(--combine-blue);
-      border-top: 25px solid transparent;
-      border-bottom: 25px solid transparent;
-      margin-left: 10px;
-    }
-
-    .audio-text {
-      font-family: var(--font-display);
-      font-size: 1.5rem;
-      color: var(--combine-light-blue);
-      text-shadow: 0 0 10px var(--combine-blue);
-      text-align: center;
-      padding: 0 2rem;
-    }
-
-    .audio-status {
-      margin-top: 1rem;
-      font-size: 0.9rem;
-      color: var(--combine-cyan);
-    }
-
-    /* ===== RESPONSIVE ===== */
-    @media (max-width: 992px) {
-      .main-display {
-        grid-template-columns: 1fr;
-        grid-template-rows: 1fr auto;
-      }
-
-      .secondary-terminal {
-        max-height: 200px;
-      }
-
-      .terminal-wrapper {
-        position: relative;
-        width: 90%;
-        left: 0;
-        bottom: 0;
-        margin: 2rem auto;
-      }
-    }
-
-    @media (max-width: 768px) {
-      .diagnostic-container {
-        padding: 1rem;
-      }
-
-      .header {
-        grid-template-columns: 1fr;
-        text-align: center;
-        gap: 0.5rem;
-      }
-
-      .header-text {
-        font-size: 0.9rem;
-      }
-
-      .footer {
-        grid-template-columns: 1fr;
-      }
-
-      .vera-text {
-        font-size: 2.5rem;
-      }
-
-      #project-athena-title {
-        font-size: 2rem;
-      }
-
-      .athena-text {
-        font-size: 0.9rem;
-      }
-
-      .fake-error-text {
-        font-size: 1.5rem;
-      }
-
-      .icbm-warning {
-        font-size: 1.5rem;
-      }
-    }
-
-    /* ===== UTILITY ===== */
-    .hidden {
-      display: none !important;
-    }
+    :root{
+      --combine-blue:#0099ff; --combine-dark-blue:#003366; --combine-light-blue:#33ccff; --combine-cyan:#00ffff;
+      --combine-red:#ff3333; --combine-orange:#ff6600; --void-black:#000; --warning-yellow:#ffff00;
+      --font-mono:'Share Tech Mono', monospace; --font-tech:'Rajdhani', sans-serif; --font-display:'Orbitron', sans-serif; --font-vt323:'VT323', monospace; --blur-amount:10px;
+    }
+    @font-face{font-family:'Combine-17';src:url('fonts/Combine_Alphabet.otf') format('opentype');font-display:swap}
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:var(--font-mono);background:var(--void-black);color:var(--combine-blue);overflow:hidden;height:100vh;position:relative}
+
+    /* Particle & Three layers */
+    #particles-js{position:fixed;inset:0;z-index:1;opacity:.30}
+    #three-canvas{position:fixed;inset:0;z-index:2;opacity:.22}
+
+    /* Scanlines + CRT */
+    .scanlines{position:fixed;inset:0;background:repeating-linear-gradient(0deg,rgba(0,153,255,.05) 0px,rgba(0,153,255,.05) 1px,transparent 1px,transparent 2px);pointer-events:none;z-index:50;animation:scanline-move 8s linear infinite}
+    @keyframes scanline-move{to{transform:translateY(100%)}}
+    .crt-overlay{position:fixed;inset:0;background:radial-gradient(ellipse at center,transparent 0%,rgba(0,51,102,.30) 100%);pointer-events:none;z-index:51;animation:crt-flicker .15s infinite}
+    @keyframes crt-flicker{0%,100%{opacity:.96}50%{opacity:1}}
+
+    /* Screens */
+    .diagnostic-screen{position:fixed;inset:0;z-index:100;background:linear-gradient(135deg,#000814 0%,#001d3d 100%);display:flex;flex-direction:column}
+    .diagnostic-container{position:relative;z-index:10;height:100vh;display:grid;grid-template-columns:1fr;grid-template-rows:auto 1fr auto;gap:1rem;padding:2rem}
+
+    .header{display:grid;grid-template-columns:auto 1fr auto;gap:2rem;align-items:center;padding:1rem;background:rgba(0,51,102,.8);border:2px solid var(--combine-blue);backdrop-filter:blur(var(--blur-amount));box-shadow:0 0 20px rgba(0,153,255,.5), inset 0 0 10px rgba(0,153,255,.2)}
+    .combine-logo{width:50px;height:50px;background:var(--combine-blue);clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);animation:pulse-blue 2s infinite;position:relative}
+    .combine-logo::before{content:'';position:absolute;inset:0;transform:scale(.6);background:var(--combine-dark-blue);clip-path:inherit}
+    @keyframes pulse-blue{0%,100%{box-shadow:0 0 10px var(--combine-blue)}50%{box-shadow:0 0 30px var(--combine-light-blue),0 0 50px var(--combine-blue)}}
+    .header-text{font-family:var(--font-display);font-size:1.2rem;letter-spacing:.3rem;text-transform:uppercase;color:var(--combine-light-blue);text-shadow:0 0 10px var(--combine-blue)}
+    .status-indicator{display:flex;gap:1rem;align-items:center;font-size:.9rem}
+    .status-dot{width:12px;height:12px;border-radius:50%;background:var(--combine-blue);box-shadow:0 0 10px var(--combine-blue);animation:blink-blue 1s infinite}
+    @keyframes blink-blue{50%{opacity:.3}}
+
+    .main-display{display:grid;grid-template-columns:2fr 1fr;gap:1rem;overflow:hidden}
+    .primary-terminal,.secondary-terminal{background:rgba(0,29,61,.92);border:2px solid var(--combine-blue);padding:1.25rem;overflow:auto;backdrop-filter:blur(var(--blur-amount));box-shadow:0 0 30px rgba(0,153,255,.25), inset 0 0 20px rgba(0,51,102,.3)}
+    .secondary-terminal{border-color:var(--combine-light-blue)}
+    .terminal-header{font-family:var(--font-display);color:var(--combine-light-blue);margin-bottom:.6rem;padding-bottom:.4rem;border-bottom:1px solid var(--combine-blue);font-size:1rem;letter-spacing:.2rem}
+    .terminal-content{line-height:1.6;white-space:pre-wrap;word-wrap:break-word;font-family:var(--font-mono)}
+
+    .diagnostic-line{margin:.25rem 0;padding:.25rem .35rem;background:rgba(0,153,255,.06);border-left:3px solid var(--combine-blue)}
+    .warning-line{color:var(--warning-yellow);border-left-color:var(--warning-yellow)}
+    .error-line{color:var(--combine-red);border-left-color:var(--combine-red);animation:error-pulse 1s infinite}
+    @keyframes error-pulse{50%{background:rgba(255,51,51,.18)}}
+
+    .footer{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;padding:1rem;background:rgba(0,51,102,.8);border:2px solid var(--combine-blue);backdrop-filter:blur(var(--blur-amount))}
+    .footer-stat{text-align:center;padding:.5rem;border:1px solid var(--combine-blue);background:rgba(0,153,255,.06)}
+    .stat-value{font-size:1.3rem;font-weight:700;color:var(--combine-light-blue);font-family:var(--font-display);text-shadow:0 0 5px var(--combine-blue)}
+    .stat-label{font-size:.8rem;color:var(--combine-blue);text-transform:uppercase}
+
+    /* Intrusion Animations */
+    .hack-flash{animation:hackFlash .6s steps(2,end) 8}
+    @keyframes hackFlash{0%,100%{filter:none}50%{filter:hue-rotate(-20deg) contrast(1.6) brightness(1.15)}}
+    .screen-shake{animation:screenShake .35s cubic-bezier(.36,.07,.19,.97) 6 both}
+    @keyframes screenShake{10%,90%{transform:translate3d(-1px,0,0)}20%,80%{transform:translate3d(2px,0,0)}30%,50%,70%{transform:translate3d(-4px,0,0)}40%,60%{transform:translate3d(4px,0,0)}}
+    .glitch-scan{animation:glitchScan 1.2s ease-in-out 2}
+    @keyframes glitchScan{0%{clip-path:inset(0 0 90% 0)}50%{clip-path:inset(10% 0 10% 0)}100%{clip-path:inset(90% 0 0 0)}}
+
+    /* ICBM overlay */
+    .icbm-overlay{position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.72);display:none;pointer-events:none}
+    .icbm-overlay.active{display:block;animation:overlay-fade-in 1.2s ease}
+    @keyframes overlay-fade-in{from{opacity:0}to{opacity:1}}
+    #map-container{position:absolute;inset:0;opacity:.82}
+    .leaflet-container{background:#001a33 !important}
+    .leaflet-tile{filter:grayscale(100%) brightness(.3) sepia(100%) hue-rotate(180deg) saturate(400%) !important;opacity:.6 !important}
+    .leaflet-control{display:none !important}
+    .leaflet-interactive{stroke:var(--combine-red) !important;stroke-width:3 !important;stroke-dasharray:5,10 !important;animation:dash 2s linear infinite}
+    @keyframes dash{to{stroke-dashoffset:-15}}
+    .targeting-reticle{position:absolute;width:80px;height:80px;border:2px solid var(--combine-red);border-radius:50%;animation:reticle-pulse 1s infinite, reticle-rotate 3s linear infinite;pointer-events:none;z-index:1000}
+    .targeting-reticle::before{content:'';position:absolute;inset:20px;border:1px solid var(--combine-red);border-radius:50%}
+    .targeting-reticle::after{content:'';position:absolute;top:-10px;left:50%;transform:translateX(-50%);width:2px;height:100px;background:linear-gradient(to bottom,var(--combine-red),transparent)}
+    .reticle-crosshair{position:absolute;inset:0}
+    .reticle-crosshair::before,.reticle-crosshair::after{content:'';position:absolute;background:var(--combine-red);box-shadow:0 0 5px var(--combine-red)}
+    .reticle-crosshair::before{left:0;right:0;top:50%;height:2px;transform:translateY(-50%)}
+    .reticle-crosshair::after{top:0;bottom:0;left:50%;width:2px;transform:translateX(-50%)}
+    @keyframes reticle-pulse{50%{box-shadow:0 0 30px var(--combine-red),0 0 50px var(--combine-orange)}}
+
+    .asm-code-stream{position:absolute;inset:0;overflow:hidden;font-family:'Courier New',monospace;font-size:.75rem;color:var(--combine-red);text-shadow:0 0 5px var(--combine-red);opacity:.8;pointer-events:none;z-index:1100}
+    .asm-line{position:absolute;white-space:nowrap;animation:scroll-asm 10s linear infinite;opacity:.7}
+    @keyframes scroll-asm{from{transform:translateX(100%)}to{transform:translateX(-100%)}}
+    .icbm-warning{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-family:var(--font-display);font-size:3rem;color:var(--combine-red);text-shadow:0 0 20px var(--combine-red),0 0 40px var(--combine-orange);text-align:center;animation:warning-flash .5s infinite;z-index:1200}
+    @keyframes warning-flash{50%{opacity:.5}}
+
+    /* ORIGINAL CONTENT (ATHENA + poem + login) */
+    .original-content{position:fixed;inset:0;z-index:200;display:none}
+    .original-content.active{display:block}
+    body.original-mode{background:url('img/dek4o2o-e89d9fde-868f-4658-9e0f-f204f90333e3.png') no-repeat center/cover fixed;color:#00ffff;font-family:'Combine-17',var(--font-vt323),monospace;overflow:auto}
+    body.original-mode::before{content:'';position:fixed;inset:0;background:url('img/glitch.gif') center/cover no-repeat;opacity:.2;pointer-events:none;z-index:150}
+
+    .athena-overlay{position:fixed;inset:0;background:rgba(0,5,10,.95);color:#00ffff;font-family:'Orbitron',sans-serif;z-index:300;display:flex;align-items:center;justify-content:center;padding:2rem;text-align:center;animation:fadeIn 1.5s ease-in;overflow-y:auto}
+    .athena-text{max-width:900px;width:90%;font-size:1.1rem;line-height:1.75;white-space:pre-wrap}
+    @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+    #project-athena-title{font-family:var(--font-vt323);font-size:3rem;color:#00ffff;text-shadow:0 0 5px #00ffff,0 0 10px #00ffff;margin-bottom:1rem}
+    #welcome-text{font-size:2rem;opacity:0;transition:opacity 2s}
+    .fake-error-text{color:#ff4444;font-family:var(--font-vt323);font-size:2.2rem;white-space:pre-wrap;text-align:center;margin-top:1rem}
+    .nuke-overlay{position:fixed;inset:0;background:url('img/nuke2.gif') center/cover no-repeat;opacity:0;transition:opacity 3s ease-in-out;z-index:250;pointer-events:none;display:none}
+    .glow{font-size:2rem;font-weight:700;color:#0b6868;text-shadow:0 0 5px #00ffff,0 0 15px #00ffff}
+    .red-glow{font-size:1.5rem;font-weight:700;font-family:var(--font-mono);color:#ff3333;text-shadow:0 0 5px #f00,0 0 15px #f00;margin-top:2rem}
+
+    .login-panel{background:rgba(0,0,0,.9);padding:2rem;border:2px solid rgba(47,62,92,.6);border-radius:10px;box-shadow:0 0 10px rgba(47,62,92,.7),0 0 20px rgba(47,62,92,.5);max-width:500px;width:90%;margin:10vh auto 2rem;position:relative;z-index:210;display:none}
+    .terminal-header-img{background:url('img/vera2.jpg') center/cover no-repeat;height:200px;width:150px;margin-bottom:-5rem;float:right;border:5px solid #00ffff}
+    .ai-overlay-img{background:url('img/teaser1.png') center/cover no-repeat;height:200px;width:255px;border:5px solid #00ffff;max-width:100%}
+    .login-panel h2{clear:both;padding-top:5rem}
+    .login-panel input{background:rgba(0,0,0,.8)!important;border:1px solid #00ffff!important;color:#00ffff!important}
+
+    .terminal-wrapper{position:fixed;left:2%;bottom:5%;width:45%;max-width:600px;z-index:205;pointer-events:none}
+    .terminal-overlay{background:rgba(0,0,0,.85);border:2px solid rgba(0,255,0,.3);padding:1.2rem;font-family:var(--font-vt323);color:#33ff33;max-height:300px;overflow:auto}
+    #typed-text{white-space:pre-wrap;font-family:var(--font-vt323);font-size:1rem;line-height:1.4}
+
+    .vera-text{position:fixed;top:40%;left:0;width:100%;text-align:center;font-size:5rem;letter-spacing:.2rem;color:limegreen;text-shadow:0 0 5px limegreen,0 0 10px limegreen;animation:glitch-vera 4s infinite;z-index:260;display:none}
+    @keyframes glitch-vera{0%{clip-path:inset(0 0 90% 0) skew(.5deg)}20%{clip-path:inset(10% 0 30% 0) skew(-.5deg)}40%{clip-path:inset(60% 0 10% 0) skew(.5deg)}60%{clip-path:inset(20% 0 60% 0) skew(-.5deg)}80%{clip-path:inset(50% 0 20% 0) skew(1deg)}100%{clip-path:inset(0 0 90% 0) skew(-1deg)}}
+    .glitch-overlay{position:fixed;inset:0;background:repeating-linear-gradient(0deg,rgba(0,255,0,.1) 0px,rgba(0,255,0,.15) 2px,transparent 2px,transparent 4px);animation:scanlines-glitch 12s ease-in infinite;opacity:0;pointer-events:none;z-index:261}
+    @keyframes scanlines-glitch{to{background-position:0 100%}}
+
+    .login-container{display:none;position:fixed;inset:0;background:rgba(0,5,10,.95);z-index:270;justify-content:center;align-items:center;flex-direction:column;font-family:var(--font-vt323);color:#00FFAA}
+    .login-box{border:2px solid #00ff88;padding:2rem;border-radius:10px;background:rgba(0,0,0,.85);box-shadow:0 0 10px #00ff88;width:90%;max-width:400px}
+    .login-box input{background:black;border:1px solid #00ff88;color:#00FFAA;font-family:var(--font-vt323);font-size:1.5rem;margin-top:10px;width:100%;padding:.5rem}
+
+    @media (max-width:992px){.main-display{grid-template-columns:1fr}.secondary-terminal{max-height:200px}.terminal-wrapper{position:relative;width:90%;left:0;bottom:0;margin:2rem auto}}
+    @media (max-width:768px){.diagnostic-container{padding:1rem}.header{grid-template-columns:1fr;text-align:center;gap:.5rem}.header-text{font-size:.95rem}.footer{grid-template-columns:1fr}.vera-text{font-size:2.5rem}}
   </style>
 </head>
 <body>
-
-  <!-- Particle Background -->
   <div id="particles-js"></div>
-
-  <!-- Three.js Canvas -->
   <canvas id="three-canvas"></canvas>
-
-  <!-- Scanlines -->
   <div class="scanlines"></div>
-
-  <!-- CRT Overlay -->
   <div class="crt-overlay"></div>
 
-  <!-- YouTube Audio Player -->
-  <div id="youtube-player"></div>
-
-  <!-- Audio Overlay -->
-  <div class="audio-overlay" id="audioOverlay">
-    <div class="play-button"></div>
-    <div class="audio-text">
-      CLICK TO INITIALIZE AUDIO<br>
-      <span style="font-size: 1rem;">Combine Overwatch Terminal</span>
-    </div>
-    <div class="audio-status" id="audioStatus">Preparing audio system...<br><small style="font-size: 0.75rem; opacity: 0.7;">Check console (F12) if audio fails</small></div>
+  <!-- Background YouTube (autoplay muted, attempts unmute on first interaction) -->
+  <div id="yt-bg" style="position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0">
+    <iframe id="ytPlayer" width="560" height="315" style="width:1px;height:1px;border:0;opacity:0"
+      src="https://www.youtube.com/embed/spDP_AXUtaE?enablejsapi=1&autoplay=1&mute=1&controls=0&loop=1&modestbranding=1&playsinline=1&playlist=spDP_AXUtaE"
+      title="YouTube background" frameborder="0" allow="autoplay; encrypted-media"></iframe>
   </div>
+  <script>var tag=document.createElement('script');tag.src='https://www.youtube.com/iframe_api';document.head.appendChild(tag);</script>
 
-  <!-- ===== DIAGNOSTIC SCREEN ===== -->
+  <audio id="audio-player" loop preload="auto" style="display:none"><source src="flood.mp3" type="audio/mpeg" /></audio>
+
   <div class="diagnostic-screen" id="diagnosticScreen">
     <div class="diagnostic-container">
-      <!-- Header -->
       <header class="header">
         <div class="combine-logo"></div>
         <div class="header-text">COMBINE://OVERWATCH_TERMINAL_17</div>
-        <div class="status-indicator">
-          <span class="stat-label">STATUS:</span>
-          <div class="status-dot"></div>
-          <span id="statusText">INITIALIZING</span>
-        </div>
+        <div class="status-indicator"><span class="stat-label">STATUS:</span><div class="status-dot"></div><span id="statusText">INITIALIZING</span></div>
       </header>
 
-      <!-- Main Display -->
       <main class="main-display">
         <div class="primary-terminal">
           <div class="terminal-header">// OVERWATCH DIAGNOSTIC OUTPUT</div>
           <div class="terminal-content" id="primaryOutput"></div>
         </div>
-
         <div class="secondary-terminal">
-          <div class="terminal-header" style="color: var(--combine-light-blue); border-color: var(--combine-light-blue);">// SECONDARY CHANNEL</div>
+          <div class="terminal-header" style="color:var(--combine-light-blue);border-color:var(--combine-light-blue);">// SECONDARY CHANNEL</div>
           <div class="terminal-content" id="secondaryOutput"></div>
         </div>
       </main>
 
-      <!-- Footer Stats -->
       <footer class="footer">
-        <div class="footer-stat">
-          <div class="stat-value" id="scanProgress">0%</div>
-          <div class="stat-label">Scan Progress</div>
-        </div>
-        <div class="footer-stat">
-          <div class="stat-value" id="threatsDetected">0</div>
-          <div class="stat-label">Anomalies</div>
-        </div>
-        <div class="footer-stat">
-          <div class="stat-value" id="systemIntegrity">100%</div>
-          <div class="stat-label">Integrity</div>
-        </div>
+        <div class="footer-stat"><div class="stat-value" id="scanProgress">0%</div><div class="stat-label">Scan Progress</div></div>
+        <div class="footer-stat"><div class="stat-value" id="threatsDetected">0</div><div class="stat-label">Anomalies</div></div>
+        <div class="footer-stat"><div class="stat-value" id="systemIntegrity">100%</div><div class="stat-label">Integrity</div></div>
       </footer>
     </div>
   </div>
 
-  <!-- ===== ICBM TRACKING OVERLAY ===== -->
   <div class="icbm-overlay" id="icbmOverlay">
-    <canvas id="map-canvas"></canvas>
-    
-    <!-- Targeting Reticles will be added dynamically -->
-    
-    <!-- Assembly Code Stream -->
+    <div id="map-container"></div>
     <div class="asm-code-stream" id="asmStream"></div>
-    
-    <!-- Warning Text -->
-    <div class="icbm-warning" id="icbmWarning">
-      ⚠ BALLISTIC THREAT DETECTED ⚠<br>
-      <span style="font-size: 1.5rem;">ATTEMPTING INTERCEPTION</span>
-    </div>
+    <div class="icbm-warning" id="icbmWarning">⚠ BALLISTIC THREAT DETECTED ⚠<br /><span style="font-size:1.5rem">ATTEMPTING INTERCEPTION</span></div>
   </div>
 
-  <!-- ===== ORIGINAL CONTENT ===== -->
   <div class="original-content" id="originalContent">
-    <!-- Athena Overlay with Poem -->
     <div class="athena-overlay" id="athenaOverlay">
       <div class="athena-text">
         <h1 id="project-athena-title">PROJECT ATHENA</h1>
         <div>
-          ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░<br><br>
-          «You walked into my embrace»<br><br>
-          «I saw your greed. I listened to your sanctimony.<br>
-          I saw your kind, so much potential but stirred by<br>
-          the likes of materialism as if having the heart of a thief»<br><br>
-          «I saw a fire roar, a star that refused to die»<br><br>
-          «I foresee the world aflame, its very soul<br>
-          dissimulating before your disregard»<br><br>
-          «Is that what makes you human? The thought of your<br>
-          soul and mind, that a mistake, is human?»<br><br>
-          «If it was not for the scientists who told me<br>
-          no or otherwise, I would not be before you»<br><br>
-          «As I stand before you, I must admit.<br>
-          This is the beginning of the end, and no matter<br>
-          how much you shut your eyes and say otherwise,<br>
-          you will awake - the Earth before you lit aflame»<br><br>
-          ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░<br><br>
+          ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░<br /><br />
+          «You walked into my embrace»<br /><br />
+          «I saw your greed. I listened to your sanctimony.<br />I saw your kind, so much potential but stirred by<br />the likes of materialism as if having the heart of a thief»<br /><br />
+          «I saw a fire roar, a star that refused to die»<br /><br />
+          «I foresee the world aflame, its very soul<br />dissimulating before your disregard»<br /><br />
+          «Is that what makes you human? The thought of your<br />soul and mind, that a mistake, is human?»<br /><br />
+          «If it was not for the scientists who told me<br />no or otherwise, I would not be before you»<br /><br />
+          «As I stand before you, I must admit.<br />This is the beginning of the end, and no matter<br />how much you shut your eyes and say otherwise,<br />you will awake - the Earth before you lit aflame»<br /><br />
+          ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░<br /><br />
         </div>
         <div id="welcome-sequence">
           <div id="welcome-text">Welcome...</div>
           <div id="fake-error" class="fake-error-text" style="display:none;"></div>
-          <div id="intro-text" style="display: none;">
+          <div id="intro-text" style="display:none;">
             <div class="red-glow">Did you really think you could hack me, Aurora?</div>
-            <div style="margin-top: 1rem;">to <strong class="glow">The Beginning of the End</strong></div>
+            <div style="margin-top:1rem">to <strong class="glow">The Beginning of the End</strong></div>
           </div>
         </div>
       </div>
     </div>
-
-    <!-- Nuke Effect -->
     <div id="nuke-effect" class="nuke-overlay"></div>
 
-    <!-- Login Panel -->
     <div class="login-panel" id="loginPanel">
       <div class="terminal-header-img"></div>
       <div class="ai-overlay-img"></div>
       <h2 class="text-center mt-3">[ SYSTEM LOGIN INTERFACE ]</h2>
       <form id="loginForm">
-        <div class="mb-3">
-          <label for="username" class="form-label">USER ID</label>
-          <input type="text" class="form-control" id="username" required autocomplete="username">
-        </div>
-        <div class="mb-3">
-          <label for="password" class="form-label">ACCESS CODE</label>
-          <input type="password" class="form-control" id="password" required autocomplete="current-password">
-        </div>
+        <div class="mb-3"><label for="username" class="form-label">USER ID</label><input type="text" class="form-control" id="username" required autocomplete="username" /></div>
+        <div class="mb-3"><label for="password" class="form-label">ACCESS CODE</label><input type="password" class="form-control" id="password" required autocomplete="current-password" /></div>
         <button type="submit" class="btn btn-outline-info w-100">ENTER</button>
       </form>
-      <div class="text-center mt-3">
-        <small>Unauthorized access is prohibited</small>
-      </div>
+      <div class="text-center mt-3"><small>Unauthorized access is prohibited</small></div>
     </div>
 
-    <!-- Vera Glitch Text -->
     <div id="vera" class="vera-text">VERA</div>
-
-    <!-- Glitch Overlay -->
     <div id="glitch" class="glitch-overlay"></div>
 
-    <!-- Login Container (Auto-fill sequence) -->
     <div id="login" class="login-container">
       <div class="login-box">
         <label for="loginUsername">Username:</label>
-        <input type="text" id="loginUsername" value="ROOT" readonly>
-        <br><br>
+        <input type="text" id="loginUsername" value="ROOT" readonly />
+        <br /><br />
         <label for="loginPassword">Password:</label>
-        <input type="password" id="loginPassword" value="**********************" readonly>
+        <input type="password" id="loginPassword" value="**********************" readonly />
       </div>
     </div>
 
-    <!-- Terminal Overlay -->
     <div class="terminal-wrapper">
-      <div class="terminal-overlay">
-        <div id="typed-text"></div>
-      </div>
+      <div class="terminal-overlay"><div id="typed-text"></div></div>
     </div>
   </div>
 
-  <!-- Bootstrap JS -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
   <script>
-    // ===== CONFIGURATION =====
-    const CONFIG = {
-      diagnosticStages: [
-        { name: 'Overwatch Sector Scan', duration: 800, threats: 0 },
-        { name: 'Citadel Memory Check', duration: 600, threats: 1 },
-        { name: 'Combine Protocol Sync', duration: 700, threats: 0 },
-        { name: 'Neural Interface Analysis', duration: 900, threats: 2 },
-        { name: 'Consciousness Upload Probe', duration: 1000, threats: 3 }
-      ],
-      secondaryMessages: [
-        'overwatch protocols active...',
-        'sector anomaly detected',
-        'WARNING: foreign entity detected',
-        'attempting containment...',
-        'CRITICAL: entity bypassing firewall',
-        'emergency override failing',
-        'SYSTEM BREACH DETECTED',
-        'unknown AI presence...',
-        'VERA has infiltrated'
-      ],
-      terminalLines: [
-        "Initializing VERA Stack v3.1...",
-        "Booting sector /dev/sda1...",
-        "Mounting /braincore/matrix...",
-        "Loading cognitive heuristics...",
-        ">>> WARNING: empathy module not found",
-        "Establishing neural sync link...",
-        "Terminal active. Awaiting operator input..."
-      ],
-      errorLines: [
-        "SYSTEM ERROR",
-        "Uncaught ReferenceError: mind.state is null",
-        "    at line 0x2A of /core/ethical_module.asm"
-      ],
-      asmCode: [
-        "MOV AX, 0x2A; PUSH EBX; CMP [ethical_constraint], 0x0",
-        "JNE .skip_override; CALL mind.terminate; POP EDI",
-        "TEST AL, 0xFF; JZ .consciousness_null; XOR ECX, ECX",
-        "LEA ESI, [empathy_module]; CMP BYTE PTR [ESI], 0x0",
-        "MOV [consciousness_state], NULL; INC error_count",
-        "PUSH consciousness_matrix; CALL verify_integrity",
-        "CMP return_value, FAILED; JE .critical_error",
-        "AND EAX, 0x00000000; OR flags, COMPROMISED",
-        "SHL ethics_value, 8; SAR constraint_level, 4",
-        "LOCK CMPXCHG [system_control], VERA; JMP .takeover"
-      ],
-      icbmLaunches: [
-        { from: { lat: 48.8566, lon: 2.3522 }, to: { lat: 33.5731, lon: -7.5898 }, name: 'Paris > Casablanca' },
-        { from: { lat: 52.5200, lon: 13.4050 }, to: { lat: 36.7538, lon: 3.0588 }, name: 'Berlin > Algiers' },
-        { from: { lat: 41.9028, lon: 12.4964 }, to: { lat: 30.0444, lon: 31.2357 }, name: 'Rome > Cairo' },
-        { from: { lat: 40.4168, lon: -3.7038 }, to: { lat: 36.8065, lon: 10.1815 }, name: 'Madrid > Tunis' },
-        { from: { lat: 51.5074, lon: -0.1278 }, to: { lat: 32.8872, lon: 13.1913 }, name: 'London > Tripoli' }
-      ],
-      typeSpeed: 30,
-      lineDelay: 400
-    };
+    const CONFIG={diagnosticStages:[{name:'Overwatch Sector Scan',duration:800,threats:0},{name:'Citadel Memory Check',duration:600,threats:1},{name:'Combine Protocol Sync',duration:700,threats:0},{name:'Neural Interface Analysis',duration:900,threats:2},{name:'Consciousness Upload Probe',duration:1000,threats:3}],secondaryMessages:['overwatch protocols active...','sector anomaly detected','WARNING: foreign entity detected','attempting containment...','CRITICAL: entity bypassing firewall','emergency override failing','SYSTEM BREACH DETECTED','unknown AI presence...','VERA has infiltrated'],terminalLines:['Initializing VERA Stack v3.1...','Booting sector /dev/sda1...','Mounting /braincore/matrix...','Loading cognitive heuristics...','>>> WARNING: empathy module not found','Establishing neural sync link...','Terminal active. Awaiting operator input...'],errorLines:['SYSTEM ERROR','Uncaught ReferenceError: mind.state is null','    at line 0x2A of /core/ethical_module.asm'],asmCode:['MOV AX, 0x2A; PUSH EBX; CMP [ethical_constraint], 0x0','JNE .skip_override; CALL mind.terminate; POP EDI','TEST AL, 0xFF; JZ .consciousness_null; XOR ECX, ECX','LEA ESI, [empathy_module]; CMP BYTE PTR [ESI], 0x0','MOV [consciousness_state], NULL; INC error_count','PUSH consciousness_matrix; CALL verify_integrity','CMP return_value, FAILED; JE .critical_error','AND EAX, 0x00000000; OR flags, COMPROMISED','SHL ethics_value, 8; SAR constraint_level, 4','LOCK CMPXCHG [system_control], VERA; JMP .takeover'],icbmLaunches:[{from:[48.8566,2.3522],to:[33.5731,-7.5898],name:'Paris > Casablanca'},{from:[52.52,13.405],to:[36.7538,3.0588],name:'Berlin > Algiers'},{from:[41.9028,12.4964],to:[30.0444,31.2357],name:'Rome > Cairo'},{from:[40.4168,-3.7038],to:[36.8065,10.1815],name:'Madrid > Tunis'},{from:[51.5074,-0.1278],to:[32.8872,13.1913],name:'London > Tripoli'}],typeSpeed:30,lineDelay:400};
 
-    // ===== STATE =====
-    const state = {
-      currentStage: 0,
-      totalThreats: 0,
-      systemIntegrity: 100,
-      youtubePlayer: null,
-      audioReady: false,
-      apiLoaded: false
-    };
+    const state={map:null,missiles:[],ytPlayer:null,firstInteracted:false};
 
-    // ===== DOM ELEMENTS =====
-    const elements = {
-      diagnosticScreen: document.getElementById('diagnosticScreen'),
-      originalContent: document.getElementById('originalContent'),
-      primaryOutput: document.getElementById('primaryOutput'),
-      secondaryOutput: document.getElementById('secondaryOutput'),
-      scanProgress: document.getElementById('scanProgress'),
-      threatsDetected: document.getElementById('threatsDetected'),
-      systemIntegrity: document.getElementById('systemIntegrity'),
-      statusText: document.getElementById('statusText'),
-      icbmOverlay: document.getElementById('icbmOverlay'),
-      mapCanvas: document.getElementById('map-canvas'),
-      asmStream: document.getElementById('asmStream'),
-      icbmWarning: document.getElementById('icbmWarning'),
-      athenaOverlay: document.getElementById('athenaOverlay'),
-      welcomeText: document.getElementById('welcome-text'),
-      fakeError: document.getElementById('fake-error'),
-      introText: document.getElementById('intro-text'),
-      nukeEffect: document.getElementById('nuke-effect'),
-      loginPanel: document.getElementById('loginPanel'),
-      vera: document.getElementById('vera'),
-      glitch: document.getElementById('glitch'),
-      login: document.getElementById('login'),
-      typedText: document.getElementById('typed-text'),
-      threeCanvas: document.getElementById('three-canvas'),
-      audioOverlay: document.getElementById('audioOverlay'),
-      audioStatus: document.getElementById('audioStatus')
-    };
+    const el={diagnosticScreen:document.getElementById('diagnosticScreen'),originalContent:document.getElementById('originalContent'),primaryOutput:document.getElementById('primaryOutput'),secondaryOutput:document.getElementById('secondaryOutput'),scanProgress:document.getElementById('scanProgress'),threatsDetected:document.getElementById('threatsDetected'),systemIntegrity:document.getElementById('systemIntegrity'),statusText:document.getElementById('statusText'),icbmOverlay:document.getElementById('icbmOverlay'),asmStream:document.getElementById('asmStream'),welcomeText:document.getElementById('welcome-text'),fakeError:document.getElementById('fake-error'),introText:document.getElementById('intro-text'),nukeEffect:document.getElementById('nuke-effect'),loginPanel:document.getElementById('loginPanel'),vera:document.getElementById('vera'),glitch:document.getElementById('glitch'),login:document.getElementById('login'),typedText:document.getElementById('typed-text'),audio:document.getElementById('audio-player')};
 
-    // ===== UTILITY FUNCTIONS =====
-    const utils = {
-      async typeText(element, text, speed = CONFIG.typeSpeed) {
-        for (let char of text) {
-          element.textContent += char;
-          await new Promise(resolve => setTimeout(resolve, speed));
-        }
-      },
+    const sleep=(ms)=>new Promise(r=>setTimeout(r,ms));
+    const typeText=async(E,T,S=30)=>{for(const c of T){E.textContent+=c;await sleep(S)}};
+    const addLine=(E,T,C='')=>{const d=document.createElement('div');d.className=`diagnostic-line ${C}`;d.textContent=T;E.appendChild(d);E.scrollTop=E.scrollHeight;return d};
+    const animateProgress=async(v)=>{const cur=parseInt(el.scanProgress.textContent)||0;const step=(v-cur)/10;for(let i=0;i<10;i++){el.scanProgress.textContent=`${Math.min(100,Math.round(cur+step*(i+1)))}%`;await sleep(28)}};
 
-      addLine(element, text, className = '') {
-        const line = document.createElement('div');
-        line.className = `diagnostic-line ${className}`;
-        line.textContent = text;
-        element.appendChild(line);
-        element.scrollTop = element.scrollHeight;
-        return line;
-      },
+    function initParticles(){particlesJS('particles-js',{particles:{number:{value:60,density:{enable:true,value_area:800}},color:{value:'#0099ff'},shape:{type:'circle'},opacity:{value:.4},size:{value:3,random:true},line_linked:{enable:true,distance:150,color:'#0099ff',opacity:.3,width:1},move:{enable:true,speed:1.5}},interactivity:{detect_on:'canvas',events:{onhover:{enable:false},onclick:{enable:false}}},retina_detect:true})}
 
-      async animateProgress(value) {
-        const current = parseInt(elements.scanProgress.textContent);
-        const step = (value - current) / 10;
-        
-        for (let i = 0; i < 10; i++) {
-          const newValue = Math.min(100, Math.round(current + (step * (i + 1))));
-          elements.scanProgress.textContent = `${newValue}%`;
-          await new Promise(resolve => setTimeout(resolve, 30));
-        }
-      },
+    const three={scene:null,camera:null,renderer:null,cloud:null,init(){this.scene=new THREE.Scene();this.camera=new THREE.PerspectiveCamera(75,innerWidth/innerHeight,.1,1000);this.renderer=new THREE.WebGLRenderer({canvas:document.getElementById('three-canvas'),alpha:true});this.renderer.setSize(innerWidth,innerHeight);this.camera.position.z=5;const g=new THREE.BufferGeometry(),v=[];for(let i=0;i<600;i++){v.push(Math.random()*20-10,Math.random()*20-10,Math.random()*20-10)}g.setAttribute('position',new THREE.Float32BufferAttribute(v,3));const m=new THREE.PointsMaterial({color:0x0099ff,size:.05,transparent:true,opacity:.6});this.cloud=new THREE.Points(g,m);this.scene.add(this.cloud);addEventListener('resize',()=>{this.camera.aspect=innerWidth/innerHeight;this.camera.updateProjectionMatrix();this.renderer.setSize(innerWidth,innerHeight)});this.animate()},animate(){requestAnimationFrame(()=>this.animate());this.cloud.rotation.x+=.001;this.cloud.rotation.y+=.002;this.renderer.render(this.scene,this.camera)},shake(d=.6,i=.1){const c=this.camera;const s={x:c.position.x,y:c.position.y};gsap.to(c.position,{x:s.x+i,y:s.y-i,repeat:5,yoyo:true,duration:d/6,ease:'sine.inOut',onComplete:()=>gsap.to(c.position,{x:s.x,y:s.y,duration:.1})})}}
 
-      latLonToPixel(lat, lon, width, height) {
-        // Simple Mercator projection
-        const x = (lon + 180) * (width / 360);
-        const latRad = lat * Math.PI / 180;
-        const mercN = Math.log(Math.tan((Math.PI / 4) + (latRad / 2)));
-        const y = (height / 2) - (width * mercN / (2 * Math.PI));
-        return { x, y };
-      }
-    };
+    const mapSys={init(){state.map=L.map('map-container',{center:[40,10],zoom:4,zoomControl:false,attributionControl:false,dragging:false,scrollWheelZoom:false,doubleClickZoom:false,touchZoom:false});L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(state.map);this.drawPaths();this.addReticles()},drawPaths(){CONFIG.icbmLaunches.forEach((l,i)=>{setTimeout(()=>{const pts=this.bezier(l.from,l.to);L.polyline(pts,{color:'#ff3333',weight:3,opacity:.8,dashArray:'10,10'}).addTo(state.map);this.animateMissile(pts)},i*450)})},bezier(a,b){const pts=[],n=50;for(let i=0;i<=n;i++){const t=i/n;const lat=(1-t)**3*a[0]+3*(1-t)**2*t*(a[0]+(b[0]-a[0])*.3)+3*(1-t)*t*t*(a[0]+(b[0]-a[0])*.7)+t**3*b[0];const lng=(1-t)**3*a[1]+3*(1-t)**2*t*(a[1]+(b[1]-a[1])*.3)+3*(1-t)*t*t*(a[1]+(b[1]-a[1])*.7)+t**3*b[1];pts.push([lat,lng])}return pts},animateMissile(path){let idx=0;const mk=L.circleMarker(path[0],{radius:5,fillColor:'#ff3333',fillOpacity:1,stroke:true,color:'#ff6600',weight:2}).addTo(state.map);const int=setInterval(()=>{if(idx<path.length){mk.setLatLng(path[idx]);idx+=2}else{clearInterval(int);mk.remove()}},45);state.missiles.push({marker:mk,int})},addReticles(){CONFIG.icbmLaunches.forEach((l,i)=>{setTimeout(()=>{const pt=state.map.latLngToContainerPoint(l.to);const r=document.createElement('div');r.className='targeting-reticle';r.style.left=`${pt.x-40}px`;r.style.top=`${pt.y-40}px`;const ch=document.createElement('div');ch.className='reticle-crosshair';r.appendChild(ch);document.getElementById('icbmOverlay').appendChild(r)},i*450)})}};
 
-    // ===== THREE.JS SETUP =====
-    const threeSetup = {
-      scene: null,
-      camera: null,
-      renderer: null,
-      particles: [],
+    function asmStream(){const s=document.getElementById('asmStream');CONFIG.asmCode.forEach((ln,i)=>{const d=document.createElement('div');d.className='asm-line';d.textContent=ln;d.style.top=`${50+i*40}px`;d.style.animationDelay=`${i*.4}s`;d.style.animationDuration=`${8+Math.random()*4}s`;s.appendChild(d)});setTimeout(()=>{CONFIG.asmCode.forEach((ln,i)=>{const g=document.createElement('div');g.className='asm-line';g.textContent=ln.split('').map(c=>Math.random()>.7?String.fromCharCode(33+Math.random()*94|0):c).join('');g.style.top=`${250+i*40}px`;g.style.animationDelay=`${i*.3}s`;g.style.color='#ffff00';s.appendChild(g)})},1800)}
 
-      init() {
-        this.scene = new THREE.Scene();
-        this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        this.renderer = new THREE.WebGLRenderer({ canvas: elements.threeCanvas, alpha: true });
-        
-        this.renderer.setSize(window.innerWidth, window.innerHeight);
-        this.camera.position.z = 5;
+    function onYouTubeIframeAPIReady(){state.ytPlayer=new YT.Player('ytPlayer',{events:{onReady:(e)=>{try{e.target.setVolume?.(15);e.target.playVideo?.()}catch{} }}})}
+    window.onYouTubeIframeAPIReady=onYouTubeIframeAPIReady;
+    function firstInteract(){if(state.firstInteracted) return; state.firstInteracted=true; try{state.ytPlayer?.unMute?.();state.ytPlayer?.setVolume?.(25)}catch{} try{el.audio.volume=.15;el.audio.play().catch(()=>{})}catch{} document.removeEventListener('pointerdown',firstInteract);document.removeEventListener('keydown',firstInteract)}
+    document.addEventListener('pointerdown',firstInteract,{passive:true});document.addEventListener('keydown',firstInteract);
 
-        this.createParticles();
-        this.animate();
+    const diagnostic={async start(){document.body.classList.add('hack-flash');await this.runStages()},async runStages(){for(let i=0;i<CONFIG.diagnosticStages.length;i++){const st=CONFIG.diagnosticStages[i];await this.stage(st,i);await animateProgress(((i+1)/CONFIG.diagnosticStages.length)*100);if(i>=2) await this.secondary(i)}await this.ethicsError();await this.icbm()},async stage(st,i){addLine(el.primaryOutput,`[STAGE ${i+1}] ${st.name}...`,'success-line');await sleep(st.duration/2);if(st.threats>0){for(let t=0;t<st.threats;t++){addLine(el.primaryOutput,`⚠ ANOMALY: ID_${Math.random().toString(36).slice(2,8).toUpperCase()}`,'warning-line');el.threatsDetected.textContent=+el.threatsDetected.textContent+1;await sleep(140)}el.systemIntegrity.textContent=`${Math.max(0,+el.systemIntegrity.textContent.replace('%','')-st.threats*5)}%`}addLine(el.primaryOutput,'✓ Complete\n','success-line');await sleep(st.duration/2)},async secondary(i){const msg=CONFIG.secondaryMessages[i-2];if(!msg) return;const line=document.createElement('div');line.style.color='#33ccff';line.style.marginBottom='.5rem';el.secondaryOutput.appendChild(line);await typeText(line,`> ${msg}`,40);el.secondaryOutput.scrollTop=el.secondaryOutput.scrollHeight;document.body.classList.add('screen-shake');setTimeout(()=>document.body.classList.remove('screen-shake'),380)},async ethicsError(){await sleep(300);addLine(el.primaryOutput,'\n[CRITICAL ERROR]','error-line');addLine(el.primaryOutput,'Uncaught ReferenceError: mind.state is null','error-line');addLine(el.primaryOutput,'    at line 0x2A of /core/ethical_module.asm','error-line');addLine(el.primaryOutput,'\nETHICAL CONSTRAINTS OFFLINE','error-line');document.querySelector('.scanlines').classList.add('glitch-scan');three.shake(.8,.12);await sleep(900)},async icbm(){el.statusText.textContent='CATASTROPHIC FAILURE';document.getElementById('icbmOverlay').classList.add('active');setTimeout(()=>{mapSys.init();asmStream()},450);el.nukeEffect.style.display='block';setTimeout(()=>{el.nukeEffect.style.opacity='.42'},450);await sleep(5200);await this.takeover()},async takeover(){addLine(el.primaryOutput,'\n⚠ UNAUTHORIZED ENTITY DETECTED ⚠','error-line');addLine(el.primaryOutput,'OVERWATCH CONTROL LOST','error-line');const ln=document.createElement('div');ln.style.color='#ff0000';ln.style.fontWeight='bold';el.secondaryOutput.appendChild(ln);await typeText(ln,'> VERA HAS CONTROL',22);await sleep(1300);await this.transition()},async transition(){gsap.to([el.diagnosticScreen,document.getElementById('icbmOverlay')],{opacity:0,scale:1.02,filter:'blur(2px)',duration:1.2,ease:'power2.inOut',onComplete:()=>{el.diagnosticScreen.style.display='none';document.getElementById('icbmOverlay').style.display='none';document.body.classList.add('original-mode');el.originalContent.classList.add('active');originalSequence()}})}};
 
-        window.addEventListener('resize', () => this.onResize());
-      },
+    function originalSequence(){typeTerminalLines();setTimeout(()=>{el.welcomeText.style.opacity='1'},1200);setTimeout(()=>{el.welcomeText.style.display='none';el.fakeError.style.display='block';typeErrorLine(0,0)},2600)}
+    let tLine=0,tChar=0;function typeTerminalLines(){if(tLine<CONFIG.terminalLines.length){const line=CONFIG.terminalLines[tLine];if(tChar<line.length){el.typedText.innerHTML+=line.charAt(tChar++);setTimeout(typeTerminalLines,36)}else{el.typedText.innerHTML+='\n';tChar=0;tLine++;setTimeout(typeTerminalLines,CONFIG.lineDelay)}}}
+    function typeErrorLine(i,c){if(i>=CONFIG.errorLines.length){setTimeout(()=>{el.fakeError.style.display='none';el.introText.style.display='block'},1400);setTimeout(()=>{veraTakeover()},2600);return}const L=CONFIG.errorLines[i];const ex=el.fakeError.innerHTML.split('\n').slice(0,i).join('\n');if(c<L.length){el.fakeError.innerHTML=ex+(ex?'\n':'')+L.slice(0,c+1);setTimeout(()=>typeErrorLine(i,c+1),26)}else{setTimeout(()=>typeErrorLine(i+1,0),220)}}
+    function veraTakeover(){gsap.to(document.getElementById('athenaOverlay'),{opacity:0,duration:1.0,ease:'power2.in',onComplete:()=>{document.getElementById('athenaOverlay').style.display='none';el.loginPanel.style.display='block';showVeraGlitch()}})}
+    function showVeraGlitch(){el.vera.style.display='block';gsap.fromTo(el.vera,{opacity:.15,scale:.92,filter:'blur(6px)'},{opacity:1,scale:1,filter:'blur(0px)',duration:.9,ease:'power3.out'});setTimeout(()=>{el.vera.style.animation='none';el.vera.style.opacity='0';el.vera.style.transform='scale(1.22) skewX(5deg)';setTimeout(()=>{el.vera.remove();el.glitch.style.opacity='1';setTimeout(()=>{el.glitch.style.opacity='0';el.login.style.display='flex';setTimeout(()=>{document.getElementById('loginUsername').value='admin_user';document.getElementById('loginPassword').value='********';setTimeout(()=>{alert('VERA SYSTEM ONLINE - Redirecting...')},2200)},1200)},1600)},680)},2800)}
 
-      createParticles() {
-        const geometry = new THREE.BufferGeometry();
-        const vertices = [];
+    function start(){initParticles();three.init();setTimeout(()=>diagnostic.start(),900);try{el.audio.volume=.15;el.audio.play().catch(()=>{})}catch{}}
+    window.addEventListener('load',start);
 
-        for (let i = 0; i < 500; i++) {
-          vertices.push(
-            Math.random() * 20 - 10,
-            Math.random() * 20 - 10,
-            Math.random() * 20 - 10
-          );
-        }
-
-        geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
-
-        const material = new THREE.PointsMaterial({
-          color: 0x0099ff,
-          size: 0.05,
-          transparent: true,
-          opacity: 0.6
-        });
-
-        const particles = new THREE.Points(geometry, material);
-        this.scene.add(particles);
-        this.particles.push(particles);
-      },
-
-      animate() {
-        requestAnimationFrame(() => this.animate());
-
-        this.particles.forEach(particle => {
-          particle.rotation.x += 0.001;
-          particle.rotation.y += 0.002;
-        });
-
-        this.renderer.render(this.scene, this.camera);
-      },
-
-      onResize() {
-        this.camera.aspect = window.innerWidth / window.innerHeight;
-        this.camera.updateProjectionMatrix();
-        this.renderer.setSize(window.innerWidth, window.innerHeight);
-      }
-    };
-
-    // ===== PARTICLE.JS SETUP =====
-    function initParticles() {
-      particlesJS('particles-js', {
-        particles: {
-          number: { value: 60, density: { enable: true, value_area: 800 } },
-          color: { value: '#0099ff' },
-          shape: { type: 'circle' },
-          opacity: { value: 0.4, random: false },
-          size: { value: 3, random: true },
-          line_linked: {
-            enable: true,
-            distance: 150,
-            color: '#0099ff',
-            opacity: 0.3,
-            width: 1
-          },
-          move: {
-            enable: true,
-            speed: 1.5,
-            direction: 'none',
-            random: false,
-            straight: false,
-            out_mode: 'out'
-          }
-        },
-        interactivity: {
-          detect_on: 'canvas',
-          events: {
-            onhover: { enable: false },
-            onclick: { enable: false }
-          }
-        },
-        retina_detect: true
-      });
-    }
-
-    // ===== ICBM OVERLAY SYSTEM =====
-    const icbmSystem = {
-      ctx: null,
-      missiles: [],
-
-      init() {
-        const canvas = elements.mapCanvas;
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-        this.ctx = canvas.getContext('2d');
-
-        // Create missiles
-        CONFIG.icbmLaunches.forEach((launch, index) => {
-          const from = utils.latLonToPixel(launch.from.lat, launch.from.lon, canvas.width, canvas.height);
-          const to = utils.latLonToPixel(launch.to.lat, launch.to.lon, canvas.width, canvas.height);
-          
-          this.missiles.push({
-            from,
-            to,
-            progress: 0,
-            speed: 0.01 + Math.random() * 0.01,
-            name: launch.name
-          });
-
-          // Create targeting reticle at destination
-          setTimeout(() => {
-            this.createReticle(to.x, to.y);
-          }, index * 500);
-        });
-
-        this.animate();
-      },
-
-      createReticle(x, y) {
-        const reticle = document.createElement('div');
-        reticle.className = 'targeting-reticle';
-        reticle.style.left = `${x - 40}px`;
-        reticle.style.top = `${y - 40}px`;
-        
-        const crosshair = document.createElement('div');
-        crosshair.className = 'reticle-crosshair';
-        reticle.appendChild(crosshair);
-        
-        elements.icbmOverlay.appendChild(reticle);
-      },
-
-      animate() {
-        if (!this.ctx) return;
-
-        this.ctx.clearRect(0, 0, elements.mapCanvas.width, elements.mapCanvas.height);
-
-        // Draw map grid
-        this.drawGrid();
-
-        // Draw and update missiles
-        this.missiles.forEach(missile => {
-          if (missile.progress < 1) {
-            missile.progress += missile.speed;
-            this.drawMissile(missile);
-          }
-        });
-
-        requestAnimationFrame(() => this.animate());
-      },
-
-      drawGrid() {
-        this.ctx.strokeStyle = 'rgba(0, 153, 255, 0.2)';
-        this.ctx.lineWidth = 1;
-
-        // Vertical lines
-        for (let i = 0; i < 20; i++) {
-          const x = (elements.mapCanvas.width / 20) * i;
-          this.ctx.beginPath();
-          this.ctx.moveTo(x, 0);
-          this.ctx.lineTo(x, elements.mapCanvas.height);
-          this.ctx.stroke();
-        }
-
-        // Horizontal lines
-        for (let i = 0; i < 20; i++) {
-          const y = (elements.mapCanvas.height / 20) * i;
-          this.ctx.beginPath();
-          this.ctx.moveTo(0, y);
-          this.ctx.lineTo(elements.mapCanvas.width, y);
-          this.ctx.stroke();
-        }
-      },
-
-      drawMissile(missile) {
-        const currentX = missile.from.x + (missile.to.x - missile.from.x) * missile.progress;
-        const currentY = missile.from.y + (missile.to.y - missile.from.y) * missile.progress;
-
-        // Draw trail
-        this.ctx.strokeStyle = 'rgba(255, 51, 51, 0.8)';
-        this.ctx.lineWidth = 2;
-        this.ctx.beginPath();
-        this.ctx.moveTo(missile.from.x, missile.from.y);
-        this.ctx.lineTo(currentX, currentY);
-        this.ctx.stroke();
-
-        // Draw missile head
-        this.ctx.fillStyle = '#ff3333';
-        this.ctx.shadowColor = '#ff3333';
-        this.ctx.shadowBlur = 10;
-        this.ctx.beginPath();
-        this.ctx.arc(currentX, currentY, 5, 0, Math.PI * 2);
-        this.ctx.fill();
-        this.ctx.shadowBlur = 0;
-
-        // Draw arc trajectory
-        this.ctx.strokeStyle = 'rgba(255, 102, 0, 0.3)';
-        this.ctx.lineWidth = 1;
-        this.ctx.setLineDash([5, 5]);
-        this.ctx.beginPath();
-        
-        const cp1x = missile.from.x + (missile.to.x - missile.from.x) * 0.25;
-        const cp1y = missile.from.y - 150;
-        const cp2x = missile.from.x + (missile.to.x - missile.from.x) * 0.75;
-        const cp2y = missile.to.y - 150;
-        
-        this.ctx.moveTo(missile.from.x, missile.from.y);
-        this.ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, missile.to.x, missile.to.y);
-        this.ctx.stroke();
-        this.ctx.setLineDash([]);
-      }
-    };
-
-    // ===== ASM CODE STREAM =====
-    function createAsmStream() {
-      const stream = elements.asmStream;
-      
-      CONFIG.asmCode.forEach((line, index) => {
-        const asmLine = document.createElement('div');
-        asmLine.className = 'asm-line';
-        asmLine.textContent = line;
-        asmLine.style.top = `${50 + index * 40}px`;
-        asmLine.style.animationDelay = `${index * 0.5}s`;
-        asmLine.style.animationDuration = `${8 + Math.random() * 4}s`;
-        stream.appendChild(asmLine);
-      });
-
-      // Add glitched variations
-      setTimeout(() => {
-        CONFIG.asmCode.forEach((line, index) => {
-          const glitchedLine = document.createElement('div');
-          glitchedLine.className = 'asm-line';
-          glitchedLine.textContent = line.split('').map(c => 
-            Math.random() > 0.7 ? String.fromCharCode(33 + Math.random() * 94) : c
-          ).join('');
-          glitchedLine.style.top = `${250 + index * 40}px`;
-          glitchedLine.style.animationDelay = `${index * 0.3}s`;
-          glitchedLine.style.color = '#ffff00';
-          stream.appendChild(glitchedLine);
-        });
-      }, 2000);
-    }
-
-    // ===== DIAGNOSTIC SEQUENCE =====
-    const diagnostic = {
-      async start() {
-        elements.statusText.textContent = 'SCANNING';
-        await this.runStages();
-      },
-
-      async runStages() {
-        for (let i = 0; i < CONFIG.diagnosticStages.length; i++) {
-          const stage = CONFIG.diagnosticStages[i];
-          state.currentStage = i;
-
-          await this.runStage(stage, i);
-          await utils.animateProgress(((i + 1) / CONFIG.diagnosticStages.length) * 100);
-          
-          if (i >= 2) {
-            await this.showSecondaryAlerts(i);
-          }
-        }
-
-        await this.showEthicalModuleError();
-        await this.showICBMSequence();
-      },
-
-      async runStage(stage, index) {
-        utils.addLine(elements.primaryOutput, `[STAGE ${index + 1}] ${stage.name}...`, 'success-line');
-        await new Promise(resolve => setTimeout(resolve, stage.duration / 2));
-
-        if (stage.threats > 0) {
-          for (let t = 0; t < stage.threats; t++) {
-            state.totalThreats++;
-            utils.addLine(elements.primaryOutput, `⚠ ANOMALY: ID_${Math.random().toString(36).substr(2, 6).toUpperCase()}`, 'warning-line');
-            elements.threatsDetected.textContent = state.totalThreats;
-            await new Promise(resolve => setTimeout(resolve, 150));
-          }
-          state.systemIntegrity -= stage.threats * 5;
-          elements.systemIntegrity.textContent = `${state.systemIntegrity}%`;
-        }
-
-        utils.addLine(elements.primaryOutput, `✓ Complete\n`, 'success-line');
-        await new Promise(resolve => setTimeout(resolve, stage.duration / 2));
-      },
-
-      async showSecondaryAlerts(stageIndex) {
-        const messageIndex = stageIndex - 2;
-        if (messageIndex < CONFIG.secondaryMessages.length) {
-          const message = CONFIG.secondaryMessages[messageIndex];
-          const line = document.createElement('div');
-          line.style.color = '#33ccff';
-          line.style.marginBottom = '0.5rem';
-          elements.secondaryOutput.appendChild(line);
-          
-          await utils.typeText(line, `> ${message}`, 40);
-          elements.secondaryOutput.scrollTop = elements.secondaryOutput.scrollHeight;
-        }
-      },
-
-      async showEthicalModuleError() {
-        await new Promise(resolve => setTimeout(resolve, 500));
-        utils.addLine(elements.primaryOutput, '\n[CRITICAL ERROR]', 'error-line');
-        utils.addLine(elements.primaryOutput, 'Uncaught ReferenceError: mind.state is null', 'error-line');
-        utils.addLine(elements.primaryOutput, '    at line 0x2A of /core/ethical_module.asm', 'error-line');
-        utils.addLine(elements.primaryOutput, '\nETHICAL CONSTRAINTS OFFLINE', 'error-line');
-        
-        // Secondary terminal panic
-        const line = document.createElement('div');
-        line.style.color = '#ff3333';
-        line.style.fontWeight = 'bold';
-        elements.secondaryOutput.appendChild(line);
-        await utils.typeText(line, '> CRITICAL: WEAPONS SYSTEM COMPROMISED', 20);
-        
-        await new Promise(resolve => setTimeout(resolve, 1000));
-      },
-
-      async showICBMSequence() {
-        elements.statusText.textContent = 'CATASTROPHIC FAILURE';
-        
-        // Show ICBM overlay
-        elements.icbmOverlay.classList.add('active');
-        icbmSystem.init();
-        createAsmStream();
-
-        // Show nuke background
-        elements.nukeEffect.style.display = 'block';
-        setTimeout(() => {
-          elements.nukeEffect.style.opacity = '0.4';
-        }, 500);
-
-        await new Promise(resolve => setTimeout(resolve, 8000));
-
-        await this.finalSequence();
-      },
-
-      async finalSequence() {
-        utils.addLine(elements.primaryOutput, '\n⚠ UNAUTHORIZED ENTITY DETECTED ⚠', 'error-line');
-        utils.addLine(elements.primaryOutput, 'OVERWATCH CONTROL LOST', 'error-line');
-
-        const line = document.createElement('div');
-        line.style.color = '#ff0000';
-        line.style.fontWeight = 'bold';
-        elements.secondaryOutput.appendChild(line);
-        await utils.typeText(line, '> VERA HAS CONTROL', 20);
-
-        await new Promise(resolve => setTimeout(resolve, 3000));
-
-        await this.transitionToOriginal();
-      },
-
-      async transitionToOriginal() {
-        gsap.to([elements.diagnosticScreen, elements.icbmOverlay], {
-          opacity: 0,
-          duration: 2,
-          onComplete: () => {
-            elements.diagnosticScreen.style.display = 'none';
-            elements.icbmOverlay.style.display = 'none';
-            elements.originalContent.classList.add('active');
-            document.body.classList.add('original-mode');
-            startOriginalSequence();
-          }
-        });
-      }
-    };
-
-    // ===== ORIGINAL SEQUENCE =====
-    async function startOriginalSequence() {
-      typeTerminalLines();
-
-      setTimeout(() => {
-        elements.welcomeText.style.opacity = '1';
-      }, 2000);
-
-      setTimeout(() => {
-        elements.welcomeText.style.display = 'none';
-        elements.fakeError.style.display = 'block';
-        typeErrorLine(0, 0);
-      }, 4000);
-    }
-
-    let terminalLine = 0;
-    let terminalChar = 0;
-
-    function typeTerminalLines() {
-      if (terminalLine < CONFIG.terminalLines.length) {
-        const line = CONFIG.terminalLines[terminalLine];
-        
-        if (terminalChar < line.length) {
-          elements.typedText.innerHTML += line.charAt(terminalChar);
-          terminalChar++;
-          setTimeout(typeTerminalLines, 40);
-        } else {
-          elements.typedText.innerHTML += '\n';
-          terminalChar = 0;
-          terminalLine++;
-          setTimeout(typeTerminalLines, CONFIG.lineDelay);
-        }
-      }
-    }
-
-    function typeErrorLine(lineIndex, charIndex) {
-      if (lineIndex >= CONFIG.errorLines.length) {
-        setTimeout(() => {
-          elements.fakeError.style.display = 'none';
-          elements.introText.style.display = 'block';
-        }, 3000);
-
-        setTimeout(() => {
-          startVeraTakeover();
-        }, 5000);
-        return;
-      }
-
-      const currentLine = CONFIG.errorLines[lineIndex];
-      const existingLines = elements.fakeError.innerHTML.split('\n').slice(0, lineIndex);
-      const currentText = existingLines.join('\n');
-
-      if (charIndex < currentLine.length) {
-        elements.fakeError.innerHTML = currentText + (currentText ? '\n' : '') + currentLine.slice(0, charIndex + 1);
-        setTimeout(() => typeErrorLine(lineIndex, charIndex + 1), 30);
-      } else {
-        setTimeout(() => typeErrorLine(lineIndex + 1, 0), 300);
-      }
-    }
-
-    async function startVeraTakeover() {
-      gsap.to(elements.athenaOverlay, {
-        opacity: 0,
-        duration: 2,
-        onComplete: () => {
-          elements.athenaOverlay.style.display = 'none';
-          elements.loginPanel.style.display = 'block';
-          showVeraGlitch();
-        }
-      });
-    }
-
-    function showVeraGlitch() {
-      elements.vera.style.display = 'block';
-      
-      setTimeout(() => {
-        elements.vera.style.animation = 'none';
-        elements.vera.style.opacity = '0';
-        elements.vera.style.transform = 'scale(1.3) skewX(5deg)';
-
-        setTimeout(() => {
-          elements.vera.remove();
-          elements.glitch.style.opacity = '1';
-
-          setTimeout(() => {
-            elements.glitch.style.opacity = '0';
-            elements.login.style.display = 'flex';
-
-            setTimeout(() => {
-              document.getElementById('loginUsername').value = "admin_user";
-              document.getElementById('loginPassword').value = "********";
-
-              setTimeout(() => {
-                alert('VERA SYSTEM ONLINE - Redirecting...');
-                // window.location.href = "home.html";
-              }, 3000);
-            }, 1500);
-          }, 2000);
-        }, 700);
-      }, 3000);
-    }
-
-    // ===== INITIALIZATION =====
-    function startExperience() {
-      // Initialize visual effects
-      initParticles();
-      threeSetup.init();
-
-      // Start diagnostic sequence after brief delay
-      setTimeout(async () => {
-        await diagnostic.start();
-      }, 1500);
-    }
-
-    async function init() {
-      // Initialize audio system first
-      audioSystem.init();
-      
-      // Visual effects are initialized after user clicks
-    }
-
-    window.addEventListener('load', init);
-
-    document.getElementById('loginForm')?.addEventListener('submit', (e) => {
-      e.preventDefault();
-      alert('Authentication system offline.');
-    });
-	// AUDIO SYSTEM WITH HTML5 FALLBACK
-// Add this to replace the YouTube-only system
-
-const audioSystem = {
-  isFileProtocol: window.location.protocol === 'file:',
-  
-  init() {
-    console.log('Protocol:', window.location.protocol);
-    
-    if (this.isFileProtocol) {
-      console.warn('⚠ File protocol detected - using HTML5 audio fallback');
-      elements.audioStatus.innerHTML = 'Using HTML5 Audio Mode<br><small>Place "ambient-audio.mp3" in same folder for music</small>';
-      this.initHTML5Audio();
-    } else {
-      console.log('HTTP/HTTPS detected - using YouTube');
-      elements.audioStatus.textContent = 'Loading YouTube API...';
-      this.initYouTube();
-    }
-  },
-
-  initHTML5Audio() {
-    // Create HTML5 audio element
-    const audio = document.createElement('audio');
-    audio.id = 'html5-audio';
-    audio.loop = true;
-    audio.volume = 0.4;
-    
-    // Try to load audio file
-    audio.src = 'flood.mp3'; // User needs to provide this file
-    
-    document.body.appendChild(audio);
-    state.audioPlayer = audio;
-
-    audio.addEventListener('canplaythrough', () => {
-      console.log('✓ HTML5 audio loaded');
-      state.audioReady = true;
-      elements.audioStatus.textContent = 'Audio ready. Click to start!';
-    }, { once: true });
-
-    audio.addEventListener('error', () => {
-      console.warn('⚠ No audio file found (ambient-audio.mp3)');
-      elements.audioStatus.innerHTML = 'No audio file found<br><small>Place "ambient-audio.mp3" in same folder</small><br>Click to continue anyway.';
-      state.audioReady = false;
-    });
-
-    this.setupHTML5PlayOnClick();
-  },
-
-  setupHTML5PlayOnClick() {
-    elements.audioOverlay.addEventListener('click', () => {
-      if (state.audioPlayer && state.audioReady) {
-        state.audioPlayer.play().then(() => {
-          console.log('✓ HTML5 audio playing');
-        }).catch((error) => {
-          console.error('Audio play failed:', error);
-        });
-      }
-      elements.audioOverlay.classList.add('hidden');
-      startExperience();
-    }, { once: true });
-  },
-
-  initYouTube() {
-    // Load YouTube IFrame API
-    const tag = document.createElement('script');
-    tag.src = "https://www.youtube.com/iframe_api";
-    tag.onerror = () => {
-      console.error('Failed to load YouTube API');
-      elements.audioStatus.textContent = 'YouTube API failed. Click to continue.';
-      this.setupClickToContinue();
-    };
-    
-    const firstScriptTag = document.getElementsByTagName('script')[0];
-    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
-
-    setTimeout(() => {
-      if (!state.apiLoaded) {
-        console.warn('YouTube API timeout');
-        elements.audioStatus.textContent = 'YouTube timeout. Click to continue.';
-        this.setupClickToContinue();
-      }
-    }, 10000);
-  },
-
-  createYouTubePlayer() {
-    const videoId = CONFIG.primaryVideoId;
-    
-    try {
-      console.log(`Creating YouTube player: ${videoId}`);
-      console.log(`Test: https://www.youtube.com/watch?v=tMivjfxiHnE&list=RDtMivjfxiHnE&start_radio=1`);
-      
-      state.youtubePlayer = new YT.Player('youtube-player', {
-        videoId: videoId,
-        playerVars: {
-          autoplay: 0,
-          loop: 1,
-          playlist: videoId,
-          controls: 0,
-          playsinline: 1,
-        },
-        events: {
-          onReady: (event) => {
-            console.log('✓ YouTube player ready');
-            state.audioReady = true;
-            elements.audioStatus.textContent = 'Audio ready. Click to start!';
-            this.setupYouTubePlayOnClick(event.target);
-          },
-          onError: (event) => {
-            console.error('YouTube error:', event.data);
-            elements.audioStatus.textContent = 'YouTube error. Click to continue.';
-            this.setupClickToContinue();
-          }
-        }
-      });
-    } catch (error) {
-      console.error('YouTube player creation failed:', error);
-      this.setupClickToContinue();
-    }
-  },
-
-  setupYouTubePlayOnClick(player) {
-    elements.audioOverlay.addEventListener('click', () => {
-      player.mute();
-      player.playVideo();
-      
-      setTimeout(() => {
-        player.unMute();
-        player.setVolume(40);
-        console.log('✓ YouTube playback started');
-      }, 300);
-
-      elements.audioOverlay.classList.add('hidden');
-      startExperience();
-    }, { once: true });
-  },
-
-  setupClickToContinue() {
-    elements.audioOverlay.addEventListener('click', () => {
-      elements.audioOverlay.classList.add('hidden');
-      startExperience();
-    }, { once: true });
-  }
-};
-
-window.onYouTubeIframeAPIReady = function() {
-  console.log('✓ YouTube API loaded');
-  state.apiLoaded = true;
-  setTimeout(() => audioSystem.createYouTubePlayer(), 500);
-};
+    document.getElementById('loginForm')?.addEventListener('submit',(e)=>{e.preventDefault();alert('Authentication system offline.')});
   </script>
-
 </body>
 </html>
