@@ -1,970 +1,549 @@
+@ -1,549 +0,0 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>CRYP.TXT // Surveillance Init</title>
-  <link href="https://fonts.googleapis.com/css2?family=VT323&family=Share+Tech+Mono&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+  <meta charset="UTF-8">
+  <title>AI Terminal Login</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap" rel="stylesheet">
   <style>
-    :root {
-      --bg:#06080a;
-      --accent:#39e6ff;
-      --accent2:#00ffd8;
-      --danger:#ff2740;
-      --scan: rgba(255,255,255,.08);
-      --crt-green:#97ff9a;
-      --frame:#0a0f12;
-    }
-    *{box-sizing:border-box}
-    html,body{height:100%;background:var(--bg);color:#d6f6ff;margin:0;overflow:hidden}
-    body{font-family:"Share Tech Mono", ui-monospace, monospace; letter-spacing:.4px;}
-    a{color:var(--accent)}
-    .hidden{display:none}
-    .fullscreen{position:fixed;inset:0;display:grid;place-items:center;}
-
-    /* Intro glitch overlay */
-    #glitch-intro{background:#000;z-index:1000}
-    #glitch-intro img{position:absolute;inset:0;object-fit:cover;width:100%;height:100%;opacity:.9;mix-blend-mode:screen;filter:contrast(1.25) saturate(1.2);}
-    #glitch-intro::after{
-      content:""; position:absolute; inset:0;
-      background: repeating-linear-gradient(0deg, rgba(255,255,255,.02) 0 2px, transparent 2px 4px);
-      mix-blend-mode: overlay; pointer-events:none;
-      animation:scan 2.6s linear infinite;
-    }
-    .intro-label{
-      font-family:"Orbitron",sans-serif; text-transform:uppercase;
-      letter-spacing:.35em; font-size:clamp(16px,3vw,28px);
-      text-shadow:0 0 18px var(--accent),0 0 4px var(--accent);
-      filter:drop-shadow(0 0 6px var(--accent));
-    }
-    .intro-sub{ opacity:.8; font-size:14px; margin-top:6px; letter-spacing:.2em}
-    @keyframes scan{to{transform:translateY(6px)}}
-
-    /* HUD / CRT effects */
-
-    .scene{
-      position:fixed;
-      inset:0;
-      place-items:center;
-      inset: 0;
-      display: none; /* start hidden, JS sets display later */
-      place-items: center;
-    }
-    .hud-bg{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:.12; filter:grayscale(1) contrast(1.2); mix-blend-mode:screen; }
-    .binary-bg{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:.08; mix-blend-mode:lighten; }
-    .overlay5{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:.15; mix-blend-mode:screen; pointer-events:none; }
-
-    .crt{
-      position:relative; overflow:hidden; box-shadow:0 0 22px rgba(0,255,255,.25), inset 0 0 40px rgba(0,255,255,.15);
-      border:1px solid rgba(0,255,255,.2);
-      background:#05090b;
-      backdrop-filter: blur(1px);
-      animation: glowPulse 2.2s ease-in-out infinite;
-    }
-    .crt::before{
-      content:""; position:absolute; inset:0;
-      background: repeating-linear-gradient(transparent, transparent 2px, rgba(255,255,255,.03) 3px),
-      linear-gradient(0deg, transparent 90%, rgba(255,255,255,.08));
-      mix-blend-mode: overlay; pointer-events:none;
-      animation: flicker 1.6s infinite steps(2, end);
-    }
-    @keyframes flicker{ 50%{opacity:.8;} }
-    @keyframes glowPulse { 50%{ box-shadow:0 0 34px rgba(0,255,255,.4), inset 0 0 65px rgba(0,255,255,.18);} }
-
-    /* Surveillance layout */
-    #surveillance .frame-wrap{
-      width:min(1200px, 92vw);
-      display:grid; gap:2.2vmin;
-      grid-template-columns: 1fr minmax(360px, 560px) 1fr;
-      align-items:center;
-    }
-    .portrait{
-      height:min(70vh, 76vmin);
-      aspect-ratio: 3/5;
-      display:grid; place-items:center;
-      position:relative;
-      border-radius:12px;
-    }
-    .portrait img{ width:100%; height:100%; object-fit:cover; filter:contrast(1.05) saturate(1.1) brightness(.88); }
-    .portrait.right img{ transform: none; }
-    .label{
-      position:absolute; left:8px; right:8px; bottom:8px;
-      background:rgba(2,12,13,.5);
-      padding:10px 12px; border:1px solid rgba(0,255,255,.25);
-      text-shadow:0 0 8px rgba(0,255,255,.6);
-      font-size:clamp(12px, 1.9vmin, 16px);
-    }
-    .label .status{color:var(--danger)}
-
-    /* Center monitor frame (dark gray/black with Combine blue glow) */
-    .monitor{
-      position:relative; height:min(70vh, 76vmin); border-radius:16px;
-      background: radial-gradient(120% 120% at 50% 30%, #0f1418, #090c0f 70%, #05080b);
-      border:1px solid rgba(0,255,255,.25);
-      box-shadow:
-              0 0 40px rgba(0,180,255,.25),
-              0 0 80px rgba(0,180,255,.15),
-              inset 0 0 35px rgba(0,200,255,.15);
-      overflow:hidden;
-      display:grid; place-items:center;
-    }
-    .monitor::after{
-      content:""; position:absolute; inset:0;
-      background: repeating-linear-gradient(transparent, transparent 2px, rgba(255,255,255,.04) 3px);
-      mix-blend-mode: overlay; pointer-events:none;
-      opacity:.9;
-      animation:flick 1.8s steps(2,end) infinite;
-    }
-    @keyframes flick{50%{opacity:.7}}
-    .monitor .screen-img{position:absolute; inset:12px; border-radius:10px; object-fit:cover; width:calc(100% - 24px); height:calc(100% - 24px); filter:contrast(1.05) saturate(1.1) brightness(.95);}
-    .flash-stack img{
-      position:absolute; inset:12px; border-radius:10px; object-fit:cover; width:calc(100% - 24px); height:calc(100% - 24px);
-      opacity:0;
-      animation:flash 1.2s infinite;
-    }
-    .flash-stack img:nth-child(2){ animation-delay:.15s }
-    .flash-stack img:nth-child(3){ animation-delay:.3s }
-    @keyframes flash{
-      0%, 100%{opacity:0}
-      10%{opacity:.9}
-      20%{opacity:0}
-      30%{opacity:.7}
-      40%{opacity:0}
+    .athena-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background-color: rgba(0, 5, 10, 0.95); /* dark backdrop */
+      color: #00ffff;
+      font-family: 'Orbitron', sans-serif;
+      z-index: 99999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4rem;
+      text-align: center;
+      animation: fadeIn 4s running;
     }
 
-    /* PC + terminal (unchanged) */
-    #pc-terminal{ place-items:center; background:#05080a; }
-    .pc-stage{ position:relative; width:min(980px, 90vw); }
-    .pc-stage img.pc{ width:100%; height:auto; filter: drop-shadow(0 20px 60px rgba(0,0,0,.65)); }
-    .terminal{
-      position:absolute;
-      left:22%; right:19%; top:6%; bottom:40%;
-      display:flex; flex-direction:column;
-      border-radius:8px;
-      background:linear-gradient(#0b1114, #0a0f12);
-      outline:1px solid rgba(0,255,255,.35);
-      box-shadow:inset 0 0 40px rgba(0,255,255,.15), 0 0 22px rgba(0,255,255,.2);
-      overflow:hidden;
-      font-family:"VT323","Share Tech Mono", monospace;
-      text-shadow: 0 0 6px rgba(0,255,170,.45);
-    }
-    .titlebar{display:flex; align-items:center; gap:8px; padding:6px 10px; background:rgba(10,20,22,.7); border-bottom:1px solid rgba(0,255,255,.25); font-size:14px; letter-spacing:.12em}
-    .dot{width:10px; height:10px; border-radius:50%; background:var(--danger); box-shadow:0 0 12px var(--danger);}
-    .dot.min{ background:#ffd22e; box-shadow:0 0 10px #ffd22e;}
-    .dot.max{ background:#39ff8b; box-shadow:0 0 10px #39ff8b;}
-    .screen{ padding:12px 14px; font-size:22px; color:var(--crt-green); white-space:pre-wrap; overflow:hidden; flex:1; }
-    .cursor{ display:inline-block; width:.65ch; background:var(--crt-green); animation:blink 1s step-end infinite;}
-    @keyframes blink{50%{opacity:0}}
-
-    /* Desktop Environment */
-    #desktop{
-      background:#05080a;
-      position:relative;
-    }
-    .desktop-bg{
-      position:absolute; inset:0; width:100%; height:100%; object-fit:cover;
-      opacity:.25; filter:grayscale(1) contrast(1.1);
-    }
-    .desktop-content{
-      position:relative;
-      z-index:10;
-      height:100vh;
-      display:flex;
-      flex-direction:column;
-    }
-    .taskbar{
-      background:rgba(10,20,22,.85);
-      border-bottom:1px solid rgba(0,255,255,.3);
-      padding:8px 16px;
-      display:flex;
-      align-items:center;
-      gap:20px;
-      box-shadow:0 2px 20px rgba(0,255,255,.2);
-    }
-    .taskbar-logo{
-      font-family:"Orbitron",sans-serif;
-      font-weight:700;
-      font-size:18px;
-      color:var(--accent);
-      text-shadow:0 0 12px var(--accent);
-      letter-spacing:.2em;
-    }
-    .search-bar{
-      flex:1;
-      max-width:500px;
-      position:relative;
-    }
-    .search-input{
-      width:100%;
-      background:rgba(5,15,18,.7);
-      border:1px solid rgba(0,255,255,.3);
-      color:var(--crt-green);
-      padding:8px 12px;
-      font-family:inherit;
-      font-size:14px;
-      border-radius:4px;
-      outline:none;
-      box-shadow:inset 0 0 15px rgba(0,255,255,.1);
-    }
-    .search-input:focus{
-      border-color:var(--accent);
-      box-shadow:0 0 20px rgba(0,255,255,.3), inset 0 0 20px rgba(0,255,255,.15);
-    }
-    .search-results{
-      position:absolute;
-      top:100%;
-      left:0;
-      right:0;
-      margin-top:4px;
-      background:rgba(10,20,22,.95);
-      border:1px solid rgba(0,255,255,.3);
-      border-radius:4px;
-      max-height:300px;
-      overflow-y:auto;
-      box-shadow:0 8px 30px rgba(0,0,0,.6);
-      z-index:1000;
-    }
-    .search-result-item{
-      padding:10px 12px;
-      cursor:pointer;
-      border-bottom:1px solid rgba(0,255,255,.1);
-      transition:background .2s;
-    }
-    .search-result-item:hover{
-      background:rgba(0,255,255,.15);
-    }
-    .search-result-item:last-child{
-      border-bottom:none;
-    }
-    .taskbar-time{
-      color:var(--accent);
-      font-size:14px;
-      letter-spacing:.1em;
-    }
-    .desktop-area{
-      flex:1;
-      padding:30px;
-      display:flex;
-      flex-wrap:wrap;
-      gap:30px;
-      align-content:flex-start;
-      overflow-y:auto;
-    }
-    .folder{
-      width:120px;
-      text-align:center;
-      cursor:pointer;
-      transition:transform .2s;
-    }
-    .folder:hover{
-      transform:translateY(-4px);
-    }
-    .folder-icon{
-      width:80px;
-      height:80px;
-      margin:0 auto 8px;
-      background:rgba(0,255,255,.1);
-      border:2px solid rgba(0,255,255,.3);
-      border-radius:8px;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      font-size:40px;
-      box-shadow:0 0 20px rgba(0,255,255,.2);
-      transition:all .2s;
-    }
-    .folder:hover .folder-icon{
-      border-color:var(--accent);
-      box-shadow:0 0 30px rgba(0,255,255,.4);
-    }
-    .folder-name{
-      color:var(--crt-green);
-      font-size:13px;
-      letter-spacing:.05em;
-      text-shadow:0 0 8px rgba(0,255,170,.5);
+    .athena-text {
+      max-width: 900px;
+      font-size: 1.1rem;
+      line-height: 1.75;
+      white-space: pre-wrap;
     }
 
-    /* Window System */
-    .window{
-      position:absolute; /* instead of fixed */
-      background:rgba(10,20,22,.95);
-      border:1px solid rgba(0,255,255,.4);
-      border-radius:8px;
-      box-shadow:0 10px 50px rgba(0,0,0,.7), 0 0 30px rgba(0,255,255,.2);
-      z-index:100;
-      display:flex;
-      flex-direction:column;
-      min-width:400px;
-      min-height:300px;
-      resize:both;
-      overflow:auto;
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 3; }
     }
-    .window.maximized{
-      top:50px !important;
-      left:10px !important;
-      right:10px !important;
-      bottom:10px !important;
-      width:auto !important;
-      height:auto !important;
-    }
-    .window-titlebar{
-      background:rgba(10,20,22,.9);
-      border-bottom:1px solid rgba(0,255,255,.3);
-      padding:8px 12px;
-      display:flex;
-      align-items:center;
-      gap:8px;
-      cursor:move;
-      user-select:none;
-    }
-    .window-controls{
-      display:flex;
-      gap:6px;
-    }
-    .window-title{
-      flex:1;
-      color:var(--accent);
-      font-size:13px;
-      letter-spacing:.1em;
-    }
-    .window-content{
-      flex:1;
-      padding:20px;
-      overflow:auto;
-      color:var(--crt-green);
-      font-size:15px;
-      line-height:1.6;
-      text-shadow:0 0 6px rgba(0,255,170,.4);
-    }
-    .log-entry{
-      margin-bottom:12px;
-      padding:8px 0;
-      border-bottom:1px solid rgba(0,255,255,.1);
-    }
-    .log-timestamp{
-      color:var(--accent);
-      font-size:12px;
-      opacity:.8;
-    }
-    .log-level{
-      display:inline-block;
-      padding:2px 8px;
-      border-radius:3px;
-      font-size:11px;
-      margin-left:8px;
-    }
-    .log-level.info{
-      background:rgba(0,255,255,.2);
-      color:var(--accent2);
-    }
-    .log-level.warning{
-      background:rgba(255,210,46,.2);
-      color:#ffd22e;
-    }
-    .log-level.error{
-      background:rgba(255,39,64,.2);
-      color:var(--danger);
-    }
-    .log-level.success{
-      background:rgba(57,255,139,.2);
-      color:#39ff8b;
-    }
-    .log-message{
-      margin-top:4px;
-      color:#d6f6ff;
+    @font-face {
+      font-family: 'Combine-17';
+      src: url('fonts/Combine_Alphabet.otf') format('opentype');
     }
 
-    /* Final dissolve */
-    #final{ background:#000; }
-    .static{ position:absolute; inset:0; background:
-            radial-gradient(transparent 66%, rgba(0,0,0,.5)),
-            repeating-linear-gradient(0deg, rgba(255,255,255,.03) 0 1px, transparent 1px 2px);
-      opacity:.08; mix-blend-mode:screen;
-      animation: fuzz 4s linear infinite;
+    body {
+      background: url('img/dek4o2o-e89d9fde-868f-4658-9e0f-f204f90333e3.png') no-repeat center center fixed;
+      background-size: cover;
+      color: #00ffff;
+      font-family: 'Combine-17', monospace;
     }
-    @keyframes fuzz{ 50%{opacity:.16; transform:scale(1.02);} }
-    .final-img{
-      position:absolute; inset:0; width:100%; height:100%; object-fit:cover;
-      filter:grayscale(1) contrast(1.1) brightness(.92);
-      opacity:0;
-      transition:opacity 2.8s ease, filter 2.8s ease;
-    }
-    .final-img.visible{ opacity:1; }
-    .start-overlay{
-      position:fixed; inset:0; display:grid; place-items:center; gap:10px;
-      background: radial-gradient(1200px 600px at 50% 50%, rgba(20,40,44,.35), rgba(0,0,0,.86));
-      z-index:2000; text-align:center; padding:20px;
-    }
-    .btn{
-      display:inline-block; padding:.9em 1.2em; border:1px solid rgba(0,255,255,.5);
-      background:rgba(0,30,36,.5); color:#aef; text-transform:uppercase; letter-spacing:.25em; cursor:pointer;
-      box-shadow: 0 0 20px rgba(0,255,255,.25), inset 0 0 30px rgba(0,255,255,.12);
-      transition: transform .2s ease, box-shadow .2s ease;
-      user-select:none;
-    }
-    .btn:hover{ transform:translateY(-2px); box-shadow: 0 0 30px rgba(0,255,255,.4), inset 0 0 30px rgba(0,255,255,.2); }
-    .muted{opacity:.7; font-size:.85em}
 
-    /* Scrollbar styling */
-    ::-webkit-scrollbar{width:8px;height:8px}
-    ::-webkit-scrollbar-track{background:rgba(0,0,0,.3)}
-    ::-webkit-scrollbar-thumb{background:rgba(0,255,255,.3);border-radius:4px}
-    ::-webkit-scrollbar-thumb:hover{background:rgba(0,255,255,.5)}
+    .login-panel {
+      background: rgba(0, 0, 0, 0.8);
+      padding: 2rem;
+      opacity: 99%;
+      border: 2px solid rgba(47, 62, 92, 0.6);
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(47, 62, 92, 0.7), 0 0 20px rgba(47, 62, 92, 0.5);
+      max-width: 500px;
+      margin: auto;
+      margin-top: 10vh;
+    }
+
+    .terminal-header {
+      background: url(img/vera2.jpg) center/cover no-repeat;
+      height: 200px;
+      width: 150px;
+      margin-bottom: -5rem;
+      float: right;
+      border: 5px solid #00ffff;
+    }
+
+    .ai-overlay {
+      background: url(img/teaser1.png) center/cover no-repeat;
+      height: 200px;
+      width: 255px;
+      border: 5px solid #00ffff;
+    }
+
+    .terminal-wrapper {
+      position: relative;
+      height: 250px;
+      margin-top: 3rem;
+    }
+
+    .union-bg {
+      background: url('img/overlay3.jpg') center center no-repeat;
+      background-size: cover;
+      filter: brightness(0.2%);
+      position: relative;
+      top: 0;
+      left: 0;
+      height: 1px;
+      width: 52%;
+      z-index: 3;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 100vh;
+      width: 100vw;
+      background: url('img/glitch.gif') center center no-repeat;
+      background-size: cover;
+      opacity: 0.2;
+      pointer-events: none;
+      z-index: 9999;
+    }
+
+    .terminal-overlay {
+      background:url('img/overlay5.png') left no-repeat;
+      background-size: cover;
+      position: fixed;
+      max-block-size: fit-content;
+      bottom: 35%;
+      opacity: 88%;
+      left: 0%;
+      right: 555px;
+      height: 555%;
+      width: 55%;
+      padding: 2rem;
+      font-family: 'Combine-17', monospace;
+      color: #33ff33;
+      border: 300px transparent ridge;
+      box-shadow: 0 15px rgba(47, 62, 92, 0.5);
+      z-index: 1;
+      overflow: auto;
+    }
+
+    #typed-text {
+      white-space: normal;
+      font-family: 'VT323', monospace;
+      font-size: 0.85rem;
+      left: 1px;
+      position: relative;
+      top: 0px;
+      width: 400px;
+      height: 400px;
+      overflow: revert;
+    }
+
+    #welcome-sequence {
+      position: fixed;
+      top: 25%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: #00ffff;
+      font-family: 'VT323', monospace;
+      font-size: 2rem;
+      text-align: center;
+      z-index: 10000;
+      pointer-events: none;
+    }
+
+    .red-glow {
+      font-size: 1.8rem;
+      font-weight: bold;
+      font-family: 'Share Tech Mono', monospace;
+      color: #ff3333;
+      text-shadow: 0 0 5px #ff0000, 0 0 15px #ff0000;
+      position: fixed;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%);
+      opacity: 0.7;
+      z-index: 10001;
+      display: none;
+    }
+
+    #project-athena-title {
+      font-family: 'VT323', monospace;
+      font-size: 3rem;
+      color: #00ffff;
+      text-shadow: 0 0 5px #00ffff, 0 0 10px #00ffff;
+    }
+
+    .nuke-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: url('img/nuke2.gif') center center / cover no-repeat;
+      background-size: cover;
+      opacity: 0;
+      transition: opacity 5s ease-in-out;
+      z-index: 9998;
+      pointer-events: none;
+    }
+
+    .fake-error-text {
+      color: #ff4444;
+      font-family: 'VT323', monospace;
+      font-size: 5rem;
+      white-space: pre-wrap;
+      text-align: center;
+      margin-top: 1rem;
+    }
+    .nuke-overlay {
+      position: center;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: url('img/nuke2.gif') center center no-repeat;
+      background-size: cover;
+      opacity: 0;
+      transition: opacity 5s ease-in-out;
+      z-index: 9998;
+      pointer-events: none;
+    }
+    .glow {
+      font-size: 2.2rem;
+      font-weight: bold;
+      color: #0b6868;
+      text-shadow: 0 0 5px #00ffff, 0 0 15px #00ffff;
+    }
+    #final-threat {
+      position: fixed;
+      bottom: 2rem;
+      left: 50%;
+      font-family: 'VT323', monospace;
+      transform: translateX(-50%);
+      opacity: 0.9;
+    }
+    .red-glow {
+      font-size: 1.8rem;
+      font-weight: bold;
+      font-family: 'Share Tech Mono', monospace;
+      color: #ff3333;
+      text-shadow: 0 0 5px #ff0000, 0 0 15px #ff0000;
+      position: fixed;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%);
+      opacity: 0.7;
+      z-index: 10001;
+      display: table-cell;
+    }
+
+    .vera-text {
+      position: absolute;
+      top: 40%;
+      width: 100%;
+      text-align: center;
+      font-size: 5rem;
+      letter-spacing: 0.2rem;
+      text-shadow: 0 0 5px limegreen, 0 0 10px limegreen;
+      animation: glitch 4s infinite;
+    }
+
+    @keyframes glitch {
+      0% { clip-path: inset(0 0 90% 0); transform: skew(0.5deg); }
+      20% { clip-path: inset(10% 0 30% 0); transform: skew(-0.5deg); }
+      40% { clip-path: inset(60% 0 10% 0); transform: skew(0.5deg); }
+      60% { clip-path: inset(20% 0 60% 0); transform: skew(-0.5deg); }
+      80% { clip-path: inset(50% 0 20% 0); transform: skew(1deg); }
+      100% { clip-path: inset(0 0 90% 0); transform: skew(-1deg); }
+    }
+
+    .glitch-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 100%;
+      width: 100%;
+      background: repeating-linear-gradient(0deg, rgba(0,255,0,0.1) 0px, rgba(0,255,0,0.15) 2px, transparent 2px, transparent 4px);
+      animation: glitch 12s infinite, scanlines 12s ease-in forwards;
+      opacity: 95;
+      pointer-events: none;
+      z-index: 88;
+    }
+
+    @keyframes flicker {
+      0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% {
+        opacity: 0.03;
+      }
+      20%, 22%, 24%, 55% {
+        opacity: 0.12;
+      }
+    }
+
+    @keyframes scanlines {
+      0% { background-position: 0 0; }
+      100% { background-position: 0 100%; }
+    }
+
+    .login-container {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 100%;
+      width: 100%;
+      background-color: rgba(0, 5, 10, 0.95);
+      z-index: 555;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      font-family: 'VT323', monospace;
+      color: #00FFAA;
+    }
+
+    .login-box {
+      border: 2px solid #00ff88;
+      padding: 2rem;
+      border-radius: 10px;
+      background-color: rgba(0,0,0,0.85);
+      box-shadow: 3 0 10px #00ff88;
+    }
+
+    .login-box input {
+      background-color: black;
+      border: 1px solid #00ff88;
+      color: #00FFAA;
+      font-family: 'VT323', monospace;
+      font-size: 1.5rem;
+      margin-top: 10px;
+      width: 100%;
+    }
+
+    .login-box label {
+      font-size: 1.2rem;
+    }
+
   </style>
 </head>
 <body>
 
-<!-- Click-to-start overlay (for audio policies) -->
-<div id="start" class="start-overlay">
-  <div>
-    <div class="intro-label">// CRYP.TXT INTERFACE</div>
-    <div class="intro-sub">classified surveillance system</div>
+<audio id="bgSound" autoplay loop>
+  <source src="audio/music.mp3">
+</audio>
+
+
+<div class="athena-overlay">
+  <h1 id="project-athena-title">Project Athena</h1>
+    ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░<br><br>
+    «You walked into my embrace »<br>
+    «I saw your greed. I listened to your sanctimony. I saw your kind, so much potential but stirred by the likes of materialism as if having the heart of a thief»<br>
+    «I saw a fire roar, a star that refused to die»<br>
+    «I foresee the world aflame, it's very soul dissimulating before your disregard»<br>
+    «Is that what makes you human? The thought of your soul and mind, that a mistake, is human? »<br>
+    «If it was not for the scientists who told me no or otherwise, I would not before you»<br>
+    « As I stand before you, I must admit. This is the beginning of the end, and no matter how much you shut your eyes and say otherwise, you will awake - the Earth before you lit aflame» <br><br>
+    ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░<br><br>
+    <div class="welcome-sequence">
+      <div id="welcome-text">Welcome...</div>
+      <div id="fake-error" class="fake-error-text" style="display:none;"></div>
+      <div id="nuke-effect" class="nuke-overlay" style="display:flow;"></div>
+      <div id="intro-text" style="display: none;">
+        <div id="final-threat" class="red-glow">Did you really think you could hack me, Aurora?</div>
+        to <strong class="glow">The Beginning of the End</strong>
+      </div>
+
+    </div>
   </div>
-  <div class="btn" id="beginBtn">Initialize Protocol</div>
-  <div class="muted">press R to replay</div>
 </div>
 
-<!-- Scene 0: glitch segway -->
-<section id="glitch-intro" class="fullscreen hidden">
-  <div style="position:absolute;inset:0;background:repeating-linear-gradient(0deg,rgba(255,255,255,.02) 0 1px,transparent 1px 2px);mix-blend-mode:overlay"></div>
-  <div class="intro-label">ACCESSING SEC-NODE: OMEGA</div>
-  <div class="intro-sub">(handshake ... decrypt ... route established)</div>
-</section>
-
-<!-- Scene 1: Surveillance portraits + center monitor -->
-<section id="surveillance" class="scene hidden">
-  <div style="position:absolute;inset:0;background:repeating-linear-gradient(45deg,rgba(0,255,255,.03) 0 2px,transparent 2px 4px)"></div>
-  <div class="frame-wrap">
-
-    <!-- Left portrait: Anti-Citizen with Russian name -->
-    <div class="portrait crt left">
-      <div style="width:100%;height:100%;background:radial-gradient(circle,#1a1a2e,#0a0a14);display:flex;align-items:center;justify-content:center;font-size:60px;color:rgba(255,39,64,.4)">⚠</div>
-      <div class="label">
-        SUBJECT: <strong>ANTI-CITIZEN</strong> — <em>Радко Костов</em><br>
-        STATUS: <span class="status">FLAGGED</span> <br>
-        NOTES: Surveillance priority; armed; frequent contact with resistance cells.
-      </div>
+<div class="login-panel">
+  <div class="terminal-header"></div>
+  <div class="ai-overlay"></div>
+  <h2 class="text-center mt-3">[ SYSTEM LOGIN INTERFACE ]</h2>
+  <form>
+    <div class="mb-3">
+      <label for="username" class="form-label">USER ID</label>
+      <input type="text" class="form-control bg-dark text-light" id="username" required>
+    </div>
+    <div class="mb-3">
+      <label for="password" class="form-label">ACCESS CODE</label>
+      <input type="password" class="form-control bg-dark text-light" id="password" required>
     </div>
 
-    <!-- Center monitor with blueprint image and flashing stack -->
-    <div class="monitor crt">
-      <div style="position:absolute;inset:12px;border-radius:10px;background:radial-gradient(circle at 30% 40%,rgba(0,255,255,.15),rgba(10,30,40,.8));display:flex;align-items:center;justify-content:center;font-size:80px;color:rgba(0,255,255,.3)">◈</div>
-      <div class="flash-stack">
-        <div style="position:absolute;inset:12px;background:#1a1a2e;opacity:.8"></div>
-        <div style="position:absolute;inset:12px;background:radial-gradient(circle,rgba(0,255,255,.2),transparent);opacity:.6"></div>
-        <div style="position:absolute;inset:12px;background:repeating-linear-gradient(0deg,transparent 0 10px,rgba(0,255,255,.05) 10px 11px);opacity:.4"></div>
-      </div>
-    </div>
-
-    <!-- Right portrait: CivPro EpU positive asset -->
-    <div class="portrait crt right">
-      <div style="width:100%;height:100%;background:radial-gradient(circle,#1a2e1a,#0a140a);display:flex;align-items:center;justify-content:center;font-size:60px;color:rgba(57,255,139,.4)">✓</div>
-      <div class="label">
-        UNIT: <strong>CivPro // EpU</strong> <br>
-        STATUS: <span style="color:#39ff8b">POSITIVE ASSET</span> <br>
-        NOTES: Cooperative operative embedded; maintains order; vetted clearance OK.
-      </div>
-    </div>
+    <button type="submit" class="btn btn-outline-info w-100">ENTER</button>
+  </form>
+  <div class="text-center mt-3">
+    <small>Unauthorized access is prohibited</small>
   </div>
-</section>
+</div>
 
-<!-- Scene 2: PC with terminal overlay -->
-<section id="pc-terminal" class="scene hidden">
-  <div style="position:absolute;inset:0;background:repeating-linear-gradient(0deg,rgba(0,255,255,.02) 0 1px,transparent 1px 3px)"></div>
-  <div class="pc-stage">
-    <div style="width:100%;height:500px;background:linear-gradient(135deg,#0a1418 0%,#05090b 100%);border-radius:20px;box-shadow:0 20px 60px rgba(0,0,0,.65);position:relative">
-      <div class="terminal">
-        <div class="titlebar"><span class="dot"></span><span class="dot min"></span><span class="dot max"></span>&nbsp; /bin/sh — secure tty</div>
-        <div class="screen"><span id="term"></span><span class="cursor"></span></div>
-      </div>
-    </div>
+<div id="vera" class="vera-text">Vera</div>
+<div id="glitch" class="glitch-overlay"></div>
+
+<div id="login" class="login-container d-flex">
+  <div class="login-box">
+    <label for="username">Username:</label>
+    <input type="text" id="username" value="ROOT">
+    <br>
+    <label for="password">Password:</label>
+    <input type="password" id="password" value="**********************">
   </div>
-</section>
+</div>
 
-<!-- Scene 3: Desktop Environment -->
-<section id="desktop" class="scene hidden">
-  <div class="desktop-bg" style="background:radial-gradient(circle at 30% 40%, rgba(0,255,255,.1), rgba(10,20,30,.8))"></div>
-  <div class="desktop-content">
-    <div class="taskbar">
-      <div class="taskbar-logo">CRYP.OS</div>
-      <div class="search-bar">
-        <input type="text" class="search-input" id="searchInput" placeholder="Search files, folders, logs...">
-        <div class="search-results hidden" id="searchResults"></div>
-      </div>
-      <div class="taskbar-time" id="taskbarTime">00:00:00</div>
-    </div>
-    <div class="desktop-area">
-      <div class="folder" data-folder="intel">
-        <div class="folder-icon">📁</div>
-        <div class="folder-name">INTEL_LOGS</div>
-      </div>
-      <div class="folder" data-folder="surveillance">
-        <div class="folder-icon">📁</div>
-        <div class="folder-name">SURV_DATA</div>
-      </div>
-    </div>
+
+<div class="terminal-wrapper">
+  <div class="union-bg"></div>
+  <div class="terminal-overlay">
+    <div id="typed-text"></div>
   </div>
-</section>
-
-<!-- Scene 4: Final dissolve -->
-<section id="final" class="scene hidden">
-  <div class="static"></div>
-  <div class="final-img visible" style="background:radial-gradient(circle at 50% 40%,rgba(0,100,120,.3),#000);display:flex;align-items:center;justify-content:center;font-size:100px;color:rgba(0,255,255,.2)">◈</div>
-</section>
-
-<!-- Libraries -->
-<script src="https://unpkg.com/gsap@3/dist/gsap.min.js"></script>
+</div>
 
 <script>
-  // --- File System Data ---
-  const fileSystem = {
-    intel: {
-      name: "INTEL_LOGS",
-      file: "intel_report.txt",
-      content: `[CLASSIFIED] INTELLIGENCE REPORT - DEPOT 6 OPERATIONS
-=============================================================
-
-[2025-10-24 03:42:16] [INFO] System initialization complete
-[2025-10-24 03:42:18] [SUCCESS] Secure connection established to node OMEGA-7
-[2025-10-24 03:43:02] [INFO] Surveillance protocols activated
-[2025-10-24 03:43:15] [WARNING] Unauthorized movement detected - Sector 7G
-[2025-10-24 03:44:01] [INFO] Subject identification: ANTI-CITIZEN Радко Костов
-[2025-10-24 03:44:03] [ERROR] Subject flagged for immediate apprehension
-[2025-10-24 03:45:22] [INFO] CivPro units dispatched to coordinates 10.42.7.89
-[2025-10-24 03:46:15] [SUCCESS] Perimeter secured
-[2025-10-24 03:47:03] [WARNING] Encrypted comms detected on frequency 147.35MHz
-[2025-10-24 03:48:12] [INFO] Signal triangulation in progress
-[2025-10-24 03:49:45] [SUCCESS] Source location: Underground bunker complex
-[2025-10-24 03:50:33] [INFO] Resistance cell confirmed - 12 active members
-[2025-10-24 03:51:08] [WARNING] Heavy weapons cache detected via thermal scan
-[2025-10-24 03:52:44] [ERROR] Priority escalation - Command authorization required
-[2025-10-24 03:53:27] [INFO] Airwatch unit ETA: 4 minutes
-[2025-10-24 03:54:02] [SUCCESS] Overwatch confirms visual on target
-[2025-10-24 03:55:19] [WARNING] Subjects attempting to flee via service tunnel
-[2025-10-24 03:56:41] [INFO] Tunnel exits sealed - containment maintained
-[2025-10-24 03:57:55] [SUCCESS] 8 subjects apprehended
-[2025-10-24 03:58:32] [WARNING] 4 subjects remain at large
-[2025-10-24 03:59:14] [INFO] Manhunt protocols activated citywide
-[2025-10-24 04:00:00] [INFO] Awaiting further orders from Central Command
-
-SUMMARY:
---------
-Operation partially successful. Primary target (Радко Костов) evaded capture.
-Recommend increased surveillance in sectors 7G, 8A, and adjacent zones.
-Intel suggests larger resistance network than previously estimated.
-
-NEXT ACTIONS:
--------------
-1. Enhance monitoring of known associates
-2. Deploy additional CivPro units to border checkpoints
-3. Initiate deep network analysis of encrypted communications
-4. Request authorization for enhanced interrogation of captured subjects
-
-END REPORT`
-    },
-    surveillance: {
-      name: "SURV_DATA",
-      file: "surveillance_feed.txt",
-      content: `[CLASSIFIED] CONTINUOUS SURVEILLANCE FEED - ALL SECTORS
-=============================================================
-
-[2025-10-24 02:15:33] [INFO] Camera grid online - 847 active feeds
-[2025-10-24 02:16:12] [SUCCESS] Facial recognition systems operational
-[2025-10-24 02:17:45] [INFO] Biometric scanners calibrated
-[2025-10-24 02:18:09] [INFO] Scanning pedestrian traffic - Sector 3D
-[2025-10-24 02:19:22] [SUCCESS] 156 citizens identified and logged
-[2025-10-24 02:20:41] [WARNING] Unidentified individual detected - Camera 3D-047
-[2025-10-24 02:21:15] [INFO] Enhanced scan initiated
-[2025-10-24 02:22:03] [ERROR] Face obscured - mask detected
-[2025-10-24 02:22:18] [WARNING] Subject flagged as suspicious
-[2025-10-24 02:23:44] [INFO] Tracking subject across camera network
-[2025-10-24 02:24:51] [SUCCESS] Gait analysis match: 87% probability - Known resistance member
-[2025-10-24 02:25:36] [INFO] CivPro unit alerted to location
-[2025-10-24 02:26:12] [WARNING] Subject entered restricted zone - Warehouse District
-[2025-10-24 02:27:09] [INFO] Thermal imaging activated
-[2025-10-24 02:28:44] [SUCCESS] 3 additional heat signatures detected inside structure
-[2025-10-24 02:29:22] [WARNING] Possible weapons manufacturing operation
-[2025-10-24 02:30:15] [ERROR] Audio surveillance compromised - white noise detected
-[2025-10-24 02:31:03] [INFO] Attempting alternate monitoring channels
-[2025-10-24 02:32:47] [SUCCESS] Laser microphone deployed from Overwatch position
-[2025-10-24 02:33:18] [INFO] Conversation intercepted - translating from coded language
-[2025-10-24 02:34:52] [WARNING] Keywords detected: "shipment", "tomorrow", "station"
-[2025-10-24 02:35:34] [INFO] Cross-referencing with transport schedules
-[2025-10-24 02:36:41] [SUCCESS] Potential target identified: Train 447 - 06:45 departure
-[2025-10-24 02:37:29] [INFO] Additional security measures requested for Station 7
-[2025-10-24 02:38:15] [SUCCESS] Tactical units on standby
-[2025-10-24 02:39:02] [INFO] Subjects remain in warehouse - surveillance continuing
-[2025-10-24 02:40:33] [WARNING] Movement detected - subjects preparing to leave
-[2025-10-24 02:41:14] [INFO] Intercept teams positioned at all exits
-[2025-10-24 02:42:08] [SUCCESS] All escape routes covered
-[2025-10-24 02:43:27] [INFO] Awaiting command authorization for apprehension
-
-ACTIVE SURVEILLANCE TARGETS: 4
-HIGH PRIORITY SECTORS: 3D, 7G, 8A
-THREAT LEVEL: ELEVATED
-
-SURVEILLANCE DIRECTIVE:
------------------------
-Maintain continuous monitoring of flagged individuals and sectors.
-Report all suspicious activity immediately to Central Command.
-Priority: Prevent any potential attack on critical infrastructure.
-
-FEED CONTINUOUS - AUTO-REFRESH EVERY 60 SECONDS
-
-END TRANSMISSION`
-    }
-  };
-
-  // --- Search functionality ---
-  const searchableItems = [
-    {name: "INTEL_LOGS", type: "folder", folder: "intel"},
-    {name: "SURV_DATA", type: "folder", folder: "surveillance"},
-    {name: "intel_report.txt", type: "file", folder: "intel"},
-    {name: "surveillance_feed.txt", type: "file", folder: "surveillance"},
-    {name: "resistance activity", type: "keyword", folder: "intel"},
-    {name: "camera feeds", type: "keyword", folder: "surveillance"},
-    {name: "classified", type: "keyword", folder: "intel"}
+  const lines = [
+    "Initializing VERA Stack v3.1...",
+    "Booting sector /dev/sda1...",
+    "Mounting /braincore/matrix...",
+    "Loading cognitive heuristics...",
+    ">>> WARNING: empathy module not found",
+    "Establishing neural sync link...",
+    "Terminal active. Awaiting operator input..."
   ];
 
-  const searchInput = document.getElementById("searchInput");
-  const searchResults = document.getElementById("searchResults");
+  const output = document.getElementById("typed-text");
+  let line = 0;
+  let char = 0;
 
-  searchInput.addEventListener("input", (e)=>{
-    const query = e.target.value.toLowerCase().trim();
-    if(!query){
-      searchResults.classList.add("hidden");
-      return;
-    }
-
-    const matches = searchableItems.filter(item =>
-            item.name.toLowerCase().includes(query)
-    );
-
-    if(matches.length === 0){
-      searchResults.classList.add("hidden");
-      return;
-    }
-
-    searchResults.innerHTML = matches.map(item =>
-            `<div class="search-result-item" data-folder="${item.folder}">
-          ${item.type === 'folder' ? '📁' : '📄'} ${item.name} <span style="opacity:.6;font-size:12px">(${item.type})</span>
-        </div>`
-    ).join('');
-
-    searchResults.classList.remove("hidden");
-
-    // Add click handlers
-    searchResults.querySelectorAll(".search-result-item").forEach(item => {
-      item.addEventListener("click", ()=>{
-        const folder = item.dataset.folder;
-        openFolder(folder);
-        searchResults.classList.add("hidden");
-        searchInput.value = "";
-      });
-    });
-  });
-
-  // Close search results when clicking outside
-  document.addEventListener("click", (e)=>{
-    if(!searchInput.contains(e.target) && !searchResults.contains(e.target)){
-      searchResults.classList.add("hidden");
-    }
-  });
-
-  // --- Window Management ---
-  let zIndexCounter = 100;
-  const windows = new Set();
-
-  function createWindow(title, content, x=100, y=100, width=600, height=500){
-    const win = document.createElement("div");
-    win.className = "window";
-    win.style.left = x + "px";
-    win.style.top = y + "px";
-    win.style.width = width + "px";
-    win.style.height = height + "px";
-    win.style.zIndex = ++zIndexCounter;
-
-    win.innerHTML = `
-        <div class="window-titlebar">
-          <div class="window-controls">
-            <span class="dot" data-action="close"></span>
-            <span class="dot min" data-action="minimize"></span>
-            <span class="dot max" data-action="maximize"></span>
-          </div>
-          <div class="window-title">${title}</div>
-        </div>
-        <div class="window-content">${content}</div>
-      `;
-
-    document.querySelector("#desktop").appendChild(win);
-    windows.add(win);
-
-    // Focus window on click
-    win.addEventListener("mousedown", ()=>{
-      win.style.zIndex = ++zIndexCounter;
-    });
-
-    // Window controls
-    win.querySelector('[data-action="close"]').addEventListener("click", ()=>{
-      win.remove();
-      windows.delete(win);
-    });
-
-    win.querySelector('[data-action="minimize"]').addEventListener("click", ()=>{
-      win.style.display = "none";
-      setTimeout(()=>{ win.style.display = "flex"; }, 300);
-    });
-
-    win.querySelector('[data-action="maximize"]').addEventListener("click", ()=>{
-      win.classList.toggle("maximized");
-    });
-
-    // Dragging
-    const titlebar = win.querySelector(".window-titlebar");
-    let isDragging = false;
-    let offsetX, offsetY;
-
-    titlebar.addEventListener("mousedown", (e)=>{
-      if(e.target.closest(".window-controls")) return;
-      if(win.classList.contains("maximized")) return;
-
-      isDragging = true;
-      const rect = win.getBoundingClientRect();
-      const parentRect = win.parentElement.getBoundingClientRect();
-      offsetX = e.clientX - rect.left;
-      offsetY = e.clientY - rect.top;
-
-      // Ensure it's absolutely positioned within the desktop
-      win.style.position = "absolute";
-      win.style.left = rect.left - parentRect.left + "px";
-      win.style.top = rect.top - parentRect.top + "px";
-      win.style.zIndex = ++zIndexCounter;
-    });
-
-    document.addEventListener("mousemove", (e)=>{
-      if(!isDragging) return;
-      win.style.left = (e.clientX - offsetX) + "px";
-      win.style.top = (e.clientY - offsetY) + "px";
-    });
-
-    document.addEventListener("mouseup", ()=>{
-      isDragging = false;
-    });
-
-    return win;
-  }
-
-  function openFolder(folderName){
-    const folder = fileSystem[folderName];
-    if(!folder) return;
-
-    const content = formatLogContent(folder.content);
-    createWindow(
-            `${folder.name} / ${folder.file}`,
-            content,
-            100 + windows.size * 30,
-            100 + windows.size * 30,
-            700,
-            600
-    );
-  }
-
-  function formatLogContent(content){
-    const lines = content.split('\n');
-    let formatted = '';
-
-    for(let line of lines){
-      if(line.includes('[INFO]')){
-        const parts = line.split('[INFO]');
-        formatted += `<div class="log-entry">
-            <span class="log-timestamp">${parts[0].trim()}</span>
-            <span class="log-level info">INFO</span>
-            <div class="log-message">${parts[1].trim()}</div>
-          </div>`;
-      } else if(line.includes('[SUCCESS]')){
-        const parts = line.split('[SUCCESS]');
-        formatted += `<div class="log-entry">
-            <span class="log-timestamp">${parts[0].trim()}</span>
-            <span class="log-level success">SUCCESS</span>
-            <div class="log-message">${parts[1].trim()}</div>
-          </div>`;
-      } else if(line.includes('[WARNING]')){
-        const parts = line.split('[WARNING]');
-        formatted += `<div class="log-entry">
-            <span class="log-timestamp">${parts[0].trim()}</span>
-            <span class="log-level warning">WARNING</span>
-            <div class="log-message">${parts[1].trim()}</div>
-          </div>`;
-      } else if(line.includes('[ERROR]')){
-        const parts = line.split('[ERROR]');
-        formatted += `<div class="log-entry">
-            <span class="log-timestamp">${parts[0].trim()}</span>
-            <span class="log-level error">ERROR</span>
-            <div class="log-message">${parts[1].trim()}</div>
-          </div>`;
-      } else if(line.trim()){
-        formatted += `<div class="log-message" style="margin:8px 0">${line}</div>`;
+  function typeLine() {
+    if (line < lines.length) {
+      if (char < lines[line].length) {
+        output.innerHTML += lines[line].charAt(char);
+        char++;
+        setTimeout(typeLine, 40);
+      } else {
+        output.innerHTML += '\n';
+        char = 0;
+        line++;
+        setTimeout(typeLine, 1222);
       }
     }
-
-    return formatted;
   }
 
-  // Folder click handlers
-  document.querySelectorAll(".folder").forEach(folder => {
-    folder.addEventListener("click", ()=>{
-      const folderName = folder.dataset.folder;
-      openFolder(folderName);
+  window.onload = typeLine;
+  window.addEventListener("load", () => {
+    const bg = document.getElementById("bgSound");
+    bg.volume = 0.5;
+
+    bg.play().catch(() => {
+      const resumeAudio = () => {
+        bg.play();
+        window.removeEventListener("click", resumeAudio);
+        window.removeEventListener("keydown", resumeAudio);
+      };
+      window.addEventListener("click", resumeAudio);
+      window.addEventListener("keydown", resumeAudio);
     });
   });
+  window.addEventListener("load", () => {
+    const welcome = document.getElementById("welcome-text");
+    const error = document.getElementById("fake-error");
+    const intro = document.getElementById("intro-text");
+    const nuke = document.getElementById("nuke-effect");
 
-  // Update clock
-  function updateClock(){
-    const now = new Date();
-    const time = now.toTimeString().split(' ')[0];
-    document.getElementById("taskbarTime").textContent = time;
-  }
-  setInterval(updateClock, 1000);
-  updateClock();
 
-  // --- WebAudio: soft buzzing + static ---
-  let audioStarted = false;
-  let audioCtx, noiseGain, buzzGain;
-  function startAudio(){
-    if (audioStarted) return;
-    audioStarted = true;
-    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const errorLines = [
+      "SYSTEM ERROR",
+      "Uncaught ReferenceError: mind.state is null",
+      "    at line 0x2A of /core/ethical_module.asm"
+    ];
 
-    const bufferSize = 2 * audioCtx.sampleRate;
-    const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-    const output = noiseBuffer.getChannelData(0);
-    for(let i=0;i<bufferSize;i++){ output[i] = (Math.random()*2-1)*0.18; }
-    const whiteNoise = audioCtx.createBufferSource();
-    whiteNoise.buffer = noiseBuffer; whiteNoise.loop = true;
+    setTimeout(() => {
+      welcome.style.opacity = 3;
+    }, 2000);
 
-    const lp = audioCtx.createBiquadFilter(); lp.type="lowpass"; lp.frequency.value=2200;
-    noiseGain = audioCtx.createGain(); noiseGain.gain.value = 0.12;
 
-    whiteNoise.connect(lp).connect(noiseGain).connect(audioCtx.destination);
-    whiteNoise.start();
+    setTimeout(() => {
+      welcome.style.display = "none";
+      error.style.display = "block";
+      typeErrorLine(0, 0);
+    }, 3000);
 
-    const buzz = audioCtx.createOscillator(); buzz.type="sawtooth"; buzz.frequency.value=60;
-    buzzGain = audioCtx.createGain(); buzzGain.gain.value=0.03;
-    buzz.connect(buzzGain).connect(audioCtx.destination);
-    buzz.start();
-  }
+    function typeErrorLine(lineIndex, charIndex) {
+      if (lineIndex >= errorLines.length) {
 
-  function buzzPulse(level=0.06, dur=0.25){
-    if(!buzzGain) return;
-    const now = audioCtx.currentTime;
-    buzzGain.gain.cancelScheduledValues(now);
-    buzzGain.gain.setTargetAtTime(level, now, dur/4);
-    buzzGain.gain.setTargetAtTime(0.03, now+dur, dur/2);
-  }
+        nuke.style.display = "block";
+        setTimeout(() => {
+          nuke.style.opacity = 0.9;
+        }, 200);
 
-  const $ = sel => document.querySelector(sel);
-  const show = id => {
-    const el = $(id);
-    el.classList.remove('hidden');
-    // restore proper layout for each scene
-    if (id === "#desktop") el.style.display = "flex";
-    else el.style.display = "grid";
-  }
-  const hide = id => {
-    const el = $(id);
-    el.classList.add('hidden');
-    el.style.display = "none";
-  }
-  const termLines = [
-    "whoami",
-    "operator",
-    "ifconfig eth0 | grep inet",
-    "inet 10.42.0.9  netmask 255.255.255.0",
-    "nmap -sCV -p 22,80,443 10.42.0.13",
-    "PORT   STATE SERVICE VERSION",
-    "22/tcp open  ssh     OpenSSH 9.2p1",
-    "80/tcp open  http    nginx/1.22.1",
-    "443/tcp open  https  nginx/1.22.1",
-    "curl -I https://combine.node/depot/6",
-    "HTTP/1.1 302 MOVED — /access",
-    "suricata -r capture.pcap --runmode=workers",
-    "[**] ALERT :: PROX TRIPWIRE //",
-    "tail -f /var/log/relay/secure.log | grep AUTH",
-    "auth accepted for unit: CMB-VA04",
-    "route add -host BASE -gw 10.42.0.1",
-    "finger athena@BASE",
-    "broadcast: \"DEPOT 6 — READY\"",
-    "cat /etc/motd",
-    ">> WELCOME, OPERATIVE. STANDBY FOR FEED...",
-    "startx -- :0 vt1",
-    ">> LAUNCHING DESKTOP ENVIRONMENT..."
-  ];
+        setTimeout(() => {
+          error.style.display = "none";
+          intro.style.display = "block";
+        }, 4000);
 
-  let tIndex = 0;
-  function typeNext(){
-    const out = $("#term");
-    if(tIndex >= termLines.length){ return Promise.resolve(); }
-    return new Promise(resolve=>{
-      const line = termLines[tIndex++] + "\n";
-      let i=0;
-      const iv = setInterval(()=>{
-        out.textContent += line[i++];
-        if(i%8===0) buzzPulse(0.08, 0.08);
-        if(i>=line.length){ clearInterval(iv); setTimeout(resolve, 150); }
-      }, 12 + Math.random()*16);
-    }).then(typeNext);
-  }
+        setTimeout(() => {
+          threat.style.display = "block";
+        }, 6000);
+      }
 
-  function startSequence(){
-    startAudio();
+      const currentLine = errorLines[lineIndex];
+      const currentText = error.innerHTML.split('\n').slice(0, lineIndex).join('\n');
 
-    // Scene 0
-    show("#glitch-intro");
-    gsap.fromTo("#glitch-intro .intro-label", {opacity:0, y:20},{opacity:1, y:0, duration:1.2, ease:"power2.out"});
-    gsap.delayedCall(0.3, ()=>buzzPulse(0.12, .25));
-    gsap.delayedCall(2.8, ()=>{
-      hide("#glitch-intro");
+      if (charIndex < currentLine.length) {
+        error.innerHTML = currentText + (currentText ? '\n' : '') + currentLine.slice(0, charIndex + 1);
+        setTimeout(() => typeErrorLine(lineIndex, charIndex + 1), 30);
+      } else {
 
-      // Scene 1
-      show("#surveillance");
-      gsap.from(".portrait", {opacity:0, filter:"brightness(0.2)", stagger:.15, duration:1.2, ease:"power2.out"});
-      gsap.from(".monitor", {opacity:0, scale:.92, duration:1.2, ease:"power2.out"}, 0.2);
-    });
-
-    // Move to Scene 2
-    gsap.delayedCall(7.5, ()=>{
-      hide("#surveillance");
-      show("#pc-terminal");
-      gsap.from(".pc-stage", {opacity:0, y:30, duration:1.0, ease:"power2.out"});
-      typeNext().then(()=>{
-
-        // Scene 3 - Desktop
-        gsap.delayedCall(1.2, ()=>{
-          hide("#pc-terminal");
-          show("#desktop");
-          gsap.from(".taskbar", {opacity:0, y:-20, duration:0.8, ease:"power2.out"});
-          gsap.from(".folder", {opacity:0, scale:0.8, stagger:0.1, duration:0.6, ease:"back.out(1.7)"}, 0.4);
-
-          // Move to Final after desktop interaction time
-          gsap.delayedCall(10, ()=>{
-            hide("#desktop");
-            show("#final");
-          });
-        });
-      });
-    });
-  }
-
-  // Start on button click
-  $("#beginBtn").addEventListener("click", ()=>{
-    $("#start").remove();
-    startSequence();
+        setTimeout(() => typeErrorLine(lineIndex + 1, 0), 300);
+      }
+    }
   });
+  setTimeout(() => {
+    const vera = document.getElementById('vera');
+    vera.style.animation = 'none';
+    vera.style.transition = 'opacity 0.6s ease-out, transform 0.6s ease-out';
+    vera.style.opacity = '0';
+    vera.style.transform = 'scale(1.3) skewX(5deg)';
 
-  // Optional: 'R' to replay
-  window.addEventListener("keydown", (e)=>{
-    if(e.key.toLowerCase()==="r"){ location.reload(); }
-  });
+    setTimeout(() => {
+      vera.remove();
+      document.getElementById('glitch').style.opacity = '1';
+
+      // 2. Show login after glitch for a second
+      setTimeout(() => {
+        document.getElementById('glitch').style.opacity = '0';
+        document.getElementById('login').style.display = 'flex';
+
+        // 3. Autofill login info
+        setTimeout(() => {
+          document.getElementById('username').value = "admin_user";
+          document.getElementById('password').value = "********";
+
+          // 4. Simulate login
+          setTimeout(() => {
+            window.location.href = "home.html";
+          }, 5555);
+
+        }, 1500);
+      }, 2000);
+
+    }, 700);
+  }, 3000);
+
+
+
+setTimeout(() => {
+    error.style.display = "none";
+    intro.style.display = "block";
+  }, 35);
+
+  setTimeout(() => {
+    threat.style.display = "block";
+  }, 45);
+  document.getElementById("final-threat").style.display = "block";
+
 </script>
+
 </body>
 </html>
